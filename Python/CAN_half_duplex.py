@@ -1,10 +1,13 @@
+
+
+# Author: Tor Kaufmann Gjerde 
 #!/usr/bin/env python3
 
 import time
 import can
 
 # -----------------------------
-# ACE Light / Ranger constants
+# ACE Light Protocol / Ranger constants
 # -----------------------------
 NODE_ID = 0x01
 

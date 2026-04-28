@@ -7,16 +7,18 @@ import can
 # -----------------------------
 # ACE Light / Ranger constants
 # -----------------------------
-NODE_ID = 0x01
+NODE_ID = 0x02
+
+PARAM_NODE_ID = 0x10
 
 CAN_ID_COMMAND   = 0x600 + NODE_ID   # host -> Ranger
 CAN_ID_RESPONSE  = 0x580 + NODE_ID   # Ranger -> host
 CAN_ID_HEARTBEAT = 0x700 + NODE_ID   # Ranger -> host
 
-CMD_WRITE = 0x01
-CMD_READ  = 0x02
+CMD_READ  = 0x01
+CMD_WRITE = 0x02
 
-PARAM_LED_PA1 = 0x01
+PARAM_LED_PA1 = 0xC0
 
 STATUS_EXECUTING       = 0x00
 STATUS_QUEUED          = 0x01
@@ -64,6 +66,23 @@ def build_write_led(state: int) -> can.Message:
         data=data
     )
 
+def build_write_node_id(new_node_id: int) -> can.Message:
+    data = [
+        CMD_WRITE,
+        PARAM_NODE_ID,
+        new_node_id & 0xFF,  # new node ID
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+    ]
+    return can.Message(
+        arbitration_id=CAN_ID_COMMAND,
+        is_extended_id=False,
+        data=data
+    )
+
 
 def build_read_led() -> can.Message:
     data = [
@@ -83,6 +102,19 @@ def build_read_led() -> can.Message:
     )
 
 
+def build_read_node_id() -> can.Message:
+    data = [
+        CMD_READ,
+        PARAM_NODE_ID,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    ]
+    return can.Message(
+        arbitration_id=CAN_ID_COMMAND,
+        is_extended_id=False,
+        data=data
+    )
+
+
 def print_message(prefix: str, msg: can.Message) -> None:
     hex_data = " ".join(f"{b:02X}" for b in msg.data)
     safe_print(f"{prefix} ID=0x{msg.arbitration_id:03X} DLC={msg.dlc} DATA=[{hex_data}]")
@@ -94,19 +126,29 @@ def decode_response(msg: can.Message) -> None:
         return
 
     command_id   = msg.data[0]
-    status_code  = msg.data[1]
-    parameter_id = msg.data[2]
+    parameter_id = msg.data[1]
+    status_code  = msg.data[2]
     payload      = msg.data[3:8]
 
     print_message("Response", msg)
     safe_print(f"  command_id   = 0x{command_id:02X}")
-    safe_print(f"  status_code  = 0x{status_code:02X} ({status_to_string(status_code)})")
     safe_print(f"  parameter_id = 0x{parameter_id:02X}")
+    safe_print(f"  status_code  = 0x{status_code:02X} ({status_to_string(status_code)})")
     safe_print(f"  payload      = {[f'0x{x:02X}' for x in payload]}")
 
     if command_id == CMD_READ and status_code == STATUS_DATA_FOLLOWS and parameter_id == PARAM_LED_PA1:
         led_state = payload[0]
         safe_print(f"  decoded LED state = {'OFF' if led_state else 'ON'}")
+    
+    if command_id == CMD_READ and status_code == STATUS_DATA_FOLLOWS and parameter_id == PARAM_NODE_ID:
+        node_id = payload[0]
+        safe_print(f"  decoded Node ID = 0x{node_id:02X} ({node_id})")
+
+    if command_id == CMD_WRITE and parameter_id == PARAM_NODE_ID:
+        if status_code == STATUS_EXECUTING:
+            safe_print("  Node ID write accepted")
+        else:
+            safe_print("  Node ID write failed")
 
 
 def listener_thread(bus: can.Bus) -> None:
@@ -149,6 +191,8 @@ def print_menu() -> None:
     safe_print("  3  -> READ LED STATE")
     safe_print("  4  -> WRITE LED ON, then READ")
     safe_print("  5  -> WRITE LED OFF, then READ")
+    safe_print("  6  -> READ NODE ID")
+    safe_print("  7  -> WRITE NODE ID")
     safe_print("  m  -> show menu")
     safe_print("  q  -> quit\n")
 
@@ -188,6 +232,37 @@ def main() -> None:
                     time.sleep(0.1)
                     send_command(bus, build_read_led(), "READ LED STATE")
 
+                elif cmd == "6":
+                    send_command(bus, build_read_node_id(), "READ NODE ID")
+
+                elif cmd == "7":
+                    try:
+                        new_id = int(input("Enter new Node ID (0-127): ").strip(), 0)
+
+                        if not (0 <= new_id <= 127):
+                            safe_print("Invalid Node ID range")
+                            continue
+
+                        send_command(
+                            bus,
+                            build_write_node_id(new_id),
+                            f"WRITE NODE ID -> {new_id}"
+                        )
+
+                        # IMPORTANT: update host-side IDs after a short delay
+                        time.sleep(0.2)
+
+                        global NODE_ID, CAN_ID_COMMAND, CAN_ID_RESPONSE, CAN_ID_HEARTBEAT
+                        NODE_ID = new_id
+                        CAN_ID_COMMAND   = 0x600 + NODE_ID
+                        CAN_ID_RESPONSE  = 0x580 + NODE_ID
+                        CAN_ID_HEARTBEAT = 0x700 + NODE_ID
+
+                        safe_print(f"Switched host to new Node ID: {NODE_ID}")
+
+                    except ValueError:
+                        safe_print("Invalid input")
+                        
                 elif cmd == "m":
                     print_menu()
 

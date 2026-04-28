@@ -1,0 +1,22 @@
+# ===== Build output =====
+Debug/
+Release/
+build/
+
+# ===== STM32CubeIDE =====
+.metadata/
+.settings/
+
+# ===== Object / binary files =====
+*.o
+*.elf
+*.bin
+*.map
+
+# ===== Logs / temp =====
+*.log
+*.tmp
+
+# ===== OS junk =====
+.DS_Store
+Thumbs.db

@@ -5,7 +5,7 @@ import threading
 import can
 
 # -----------------------------
-# ACE Light / Ranger constants
+# Ace protocol / Ranger constants
 # -----------------------------
 NODE_ID = 0x02
 
@@ -262,7 +262,7 @@ def main() -> None:
 
                     except ValueError:
                         safe_print("Invalid input")
-                        
+
                 elif cmd == "m":
                     print_menu()
 

@@ -9,6 +9,7 @@
 #define INC_ACE_PROTOCOL_H_
 
 #include <stdint.h>
+#define ACE_NODE_ID_DEFAULT 0x02U
 
 #define ACE_CANID_COMMAND_BASE      0x600U
 #define ACE_CANID_RESPONSE_BASE     0x580U
@@ -26,7 +27,7 @@
 #define ACE_CMD_BOOT_RUN_APP        0x44U
 
 /* Following STATUS codes used for response message frame */
-#define ACE_STATUS_EXECUTING        0x00U
+#define ACE_STATUS_OK        		0x00U
 #define ACE_STATUS_QUEUED           0x01U
 #define ACE_STATUS_DATA_FOLLOWS     0x02U
 #define ACE_STATUS_UNKNOWN_COMMAND  0x10U
@@ -41,13 +42,50 @@
 #define ACE_STATE_DISABLED          0x05U
 /* STATE codes END */
 
-/* Following structure is defined as a command frame */
+/**
+ * @brief Ace protocol command structure for received CAN frames / commands
+ *
+ * NOTE:
+ * - Structure for holding specific data from the received standard CAN frame
+ * - operates on top of the low level MCU CAN controller
+ * - Includes the CAN node ID, Command, Parameter ID and payload data if applicable.
+ * - Frame is decoded by the ace protocol layer
+ * - May be updated to handle CAN-FD support
+ *
+ *  @param command_id : 	The specific command ID + CAN node ID
+ *  @param parameter_id: 	The module parameter ID to operate on
+ *  @param payload:			The data payload
+ */
+
 typedef struct
 {
   uint8_t command_id;
   uint8_t parameter_id;
   uint8_t payload[6];
 } ace_command_frame_t;
+
+/**
+ * @brief Ace protocol response structure for sending CAN frames / commands
+ *
+ * NOTE:
+ * - Structure for ace protocol response frame
+ * - Includes the echo of CAN node ID and Command.
+ * - Status code encodes standard module status codes as defined in ace_protocol.h
+ * - Frame is decoded by the ace protocol layer
+ * - May be updated to handle CAN-FD support
+ *
+ *  @param command_id : 	Echo of the specific command ID + CAN node ID
+ *  @param parameter_id: 	The module parameter ID that is being operated on
+ *  @param payload:			Payload data if applicable
+ */
+
+typedef struct
+{
+  uint8_t command_id;
+  uint8_t parameter_id;
+  uint8_t status_code;
+  uint8_t payload[5];
+} ace_response_frame_t;
 
 void ace_decode_command(const uint8_t data[8], ace_command_frame_t *frame);
 

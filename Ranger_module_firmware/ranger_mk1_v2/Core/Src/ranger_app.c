@@ -17,13 +17,11 @@
  *  - CAN hardware (ranger_can.c)
  *  - Protocol decoding (ace_protocol.c)
  */
-
-#include "ranger_app.h"
-
 #include "main.h"
 #include "ranger_can.h"
 #include "ranger_param.h"
 #include "ace_protocol.h"
+#include "ranger_app.h"
 
 /* =========================
    Application state
@@ -127,6 +125,16 @@ void ranger_app_tick(void)
 {
   uint32_t now = HAL_GetTick();
 
+  ace_command_frame_t command_frame;
+
+  /* check for new CAN messages, if new message received handle it*/
+  if (ranger_can_receive_command(&command_frame))
+  {
+    ranger_app_handle_command(&command_frame);
+    /* change node ID if a request for change was previously sent*/
+     ranger_can_process_pending_node_id_change();
+  }
+
   /* Update uptime every 1 second */
   if ((now - last_uptime_ms) >= 1000U)
   {
@@ -151,16 +159,12 @@ void ranger_app_tick(void)
     last_blink_ms += 1000U;
     HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_0);
   }
-
-  /* change node ID if a request for change was previously sent*/
-  ranger_can_process_pending_node_id_change();
-
 }
 
 /**
  * @brief Entry point for handling decoded protocol commands
  *
- * Called from CAN RX path after frame decoding.
+ * Called from application tick after CAN frame reception and ACE decoding.
  *
  * Dispatches commands to READ / WRITE handlers.
  */
@@ -266,7 +270,7 @@ static void ranger_app_handle_write(const ace_command_frame_t *frame)
 
         ranger_can_send_response(ACE_CMD_WRITE,
                                  RANGER_PARAM_LED_PA1,
-                                 ACE_STATUS_EXECUTING,
+                                 ACE_STATUS_OK,
                                  NULL,
                                  0U);
       }
@@ -291,7 +295,7 @@ static void ranger_app_handle_write(const ace_command_frame_t *frame)
         /* Acknowledge BEFORE the ID changes */
         ranger_can_send_response(ACE_CMD_WRITE,
                                  RANGER_PARAM_NODE_ID,
-                                 ACE_STATUS_EXECUTING,
+                                 ACE_STATUS_OK,
                                  NULL,
                                  0U);
       }

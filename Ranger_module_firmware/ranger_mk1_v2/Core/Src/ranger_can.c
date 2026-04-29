@@ -11,17 +11,15 @@
  *  - FDCAN start/initialization
  *  - Transmission of response frames
  *  - Transmission of heartbeat frames
- *  - Reception of CAN frames (RX callback)
+ *  - Reception of CAN frames
+ *  - ACE command decoding via ace_protocol.c
  *
  *  Does NOT own:
- *  - Protocol decoding (ace_protocol.c)
- *  - Application behavior (ranger_app.c)
+ *  - Application behavior
+ *  - Bootloader behavior
  */
-#include "ranger_app.h"
 #include "ranger_can.h"
-#include "ranger_param.h"
 #include "ace_protocol.h"
-
 
 #include <string.h>
 
@@ -39,14 +37,22 @@ extern FDCAN_HandleTypeDef hfdcan1;
 /* Pre-configured TX header for heartbeat messages */
 static FDCAN_TxHeaderTypeDef heartbeat_header;
 
-/* default node ID, used from boot */
-static uint8_t ranger_node_id = RANGER_NODE_ID_DEFAULT;
+/* Default node ID, used from boot */
+static uint8_t ranger_node_id = ACE_NODE_ID_DEFAULT;
 
-/* variable for holding the requested node ID to change to */
+/* Variable for holding the requested node ID to change to */
 static uint8_t pending_node_id = 0U;
+
+/* Flag for CAN Rx frame received but frame processing and decoding pending */
+static volatile uint8_t rx_frame_pending = 0U;
+
+/* Buffer for received CAN Rx frame */
+static uint8_t rx_data_buffer[8];
 
 /* flag for node id change request pending */
 static uint8_t node_id_change_pending = 0U;
+
+
 
 /* =========================
    Private function prototypes
@@ -150,7 +156,7 @@ void ranger_can_send_response(uint8_t command_id,
   data[1] = parameter_id;
   data[2] = status_code;
 
-  /* Copy optional payload (max 5 bytes) */
+  /* Copy optional payload (max 5 bytes) should the payload be longer only the 5 first bytes are copied*/
   if ((payload != NULL) && (payload_len > 0U))
   {
     if (payload_len > 5U)
@@ -198,6 +204,42 @@ void ranger_can_send_heartbeat(uint8_t system_state,
   {
     Error_Handler();
   }
+}
+
+/**
+ * @brief Retrieve latest received Ace command frame (non-blocking)
+ *
+ * Copies the latest received raw CAN frame from the internal RX mailbox,
+ * decodes it into an Ace command frame, and returns it to the caller.
+ *
+ * @note
+ * - Single-frame mailbox: if a new frame arrives before the previous
+ *   one is consumed, the new frame is dropped.
+ *   Todo: set up a ringbuffer
+ */
+uint8_t ranger_can_receive_command(ace_command_frame_t *frame)
+{
+  uint8_t data[8];
+
+  if (rx_frame_pending == 0U)
+  {
+    return 0U;
+  }
+
+  __disable_irq();
+
+  for (uint8_t i = 0U; i < 8U; i++)
+  {
+    data[i] = rx_data_buffer[i];
+  }
+
+  rx_frame_pending = 0U;
+
+  __enable_irq();
+
+  ace_decode_command(data, frame);
+
+  return 1U;
 }
 
 /**
@@ -336,10 +378,19 @@ static void ranger_can_config_filter(void)
  * Called by HAL when a new CAN frame is received.
  *
  * Responsibilities:
- * - Read CAN frame
- * - Filter on command ID
- * - Decode protocol frame
- * - Forward to application layer
+ * - Read CAN frame from RX FIFO
+ * - Filter frames addressed to this node
+ * - Store latest frame in internal RX mailbox
+ *
+ * Notes:
+ * - Does NOT perform protocol decoding
+ * - Does NOT call application or bootloader logic
+ * - Frame is later retrieved via ranger_can_receive()
+ *
+ * Limitation:
+ * - Single-frame mailbox: if a new frame arrives before the previous
+ *   one is consumed, it will be dropped
+ *   Todo - implement ringbuffer
  */
 void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan,
                                uint32_t RxFifo0ITs)
@@ -347,33 +398,46 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan,
   FDCAN_RxHeaderTypeDef rx_header;
   uint8_t rx_data[8];
 
-  /* Decoded protocol frame */
-  ace_command_frame_t command_frame;
-
-  /* Ensure this callback belongs to our FDCAN instance */
   if (hfdcan != &hfdcan1)
   {
     return;
   }
 
-  /* Check if new message is available */
-  if ((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) != 0U)
+  if ((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) == 0U)
   {
-    /* Read message from FIFO */
-    if (HAL_FDCAN_GetRxMessage(hfdcan,
-                               FDCAN_RX_FIFO0,
-                               &rx_header,
-                               rx_data) == HAL_OK)
-    {
-      /* Only process command frames addressed to this node */
-      if (rx_header.Identifier == ranger_can_get_command_id())
-      {
-        /* Decode Ace protocol frame */
-        ace_decode_command(rx_data, &command_frame);
-
-        /* Forward to application layer */
-        ranger_app_handle_command(&command_frame);
-      }
-    }
+    return;
   }
+
+  if (HAL_FDCAN_GetRxMessage(hfdcan,
+                             FDCAN_RX_FIFO0,
+                             &rx_header,
+                             rx_data) != HAL_OK)
+  {
+    return;
+  }
+  /*
+   * Filter the message on CAN node ID: if not correct ID,
+   * ignore frame.
+   */
+  if (rx_header.Identifier != ranger_can_get_command_id())
+  {
+    return;
+  }
+
+  if (rx_frame_pending != 0U)
+  {
+    /*
+     * Minimal version:
+     * Drop frame if previous one has not been consumed yet.
+     * Later you can replace this with a ring buffer.
+     */
+    return;
+  }
+
+  for (uint8_t i = 0; i < 8U; i++)
+  {
+	  rx_data_buffer[i] = rx_data[i];
+  }
+
+  rx_frame_pending = 1U;
 }

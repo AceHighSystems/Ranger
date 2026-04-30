@@ -17,9 +17,14 @@
 
 #define ACE_PROTOCOL_VERSION        0x01U
 
+/* Command IDs Ace protocol */
 #define ACE_CMD_READ                0x01U
 #define ACE_CMD_WRITE               0x02U
 
+/* Following Parameter ID is specific for the Bootloader of ace modules */
+#define ACE_PARAM_BOOT				0x30U
+
+/* Following Command ID are specific for the Bootloader of ace modules */
 #define ACE_CMD_BOOT_PING           0x40U
 #define ACE_CMD_BOOT_START          0x41U
 #define ACE_CMD_BOOT_DATA           0x42U

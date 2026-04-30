@@ -14,6 +14,7 @@
 /* USER CODE BEGIN Includes */
 #include "ranger_app.h"
 #include "ranger_can.h"
+#include "ranger_bootloader.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -37,13 +38,13 @@ int main(void)
   MX_FDCAN1_Init();
 
   /* Initialize Ranger layers */
-  ranger_can_init();
-  ranger_app_init();
+  //ranger_can_init();
+  ranger_bootloader_init();
 
   /* Main loop */
   while (1)
   {
-    ranger_app_tick();
+	  ranger_bootloader_task();
   }
 }
 

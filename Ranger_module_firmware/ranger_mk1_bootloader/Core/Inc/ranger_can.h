@@ -4,18 +4,14 @@
  *  Created on: Apr 27, 2026
  *      Author: Tor Kaufmann Gjerde
  *
- *  Description:
- *  CAN transport interface for Ranger module.
- *
  *  Provides:
- *  - Initialization of CAN interface
- *  - Transmission of protocol frames (response + heartbeat)
- *  - Access to node ID (runtime configurable)
+ *  - Initialization, reception and sending of CAN frames
+ *  - Ace protocol command decoding via ace_protocol
  *
  *  Does NOT handle:
- *  - Protocol decoding (ace_protocol)
  *  - Application logic (ranger_app)
- */
+ *  - Bootloader logic
+*/
 
 #ifndef INC_RANGER_CAN_H_
 #define INC_RANGER_CAN_H_
@@ -25,45 +21,32 @@
 #include "ace_protocol.h"
 
 /* =========================
-   Node configuration
-   ========================= */
-
-/*
- * Default node ID (used at startup).
- *
- * NOTE:
- * - This is only the initial value.
- * - Runtime value is stored in ranger_can.c.
- * - Can be changed via parameter interface.
- */
-#define RANGER_NODE_ID_DEFAULT     0x02U
-
-
-/* =========================
-   CAN ID definitions
-   ========================= */
-
-/*
- * CAN IDs are constructed from:
- * Base ID (protocol-defined) + node_id
- *
- * Example:
- * COMMAND   = 0x600 + node_id
- * RESPONSE  = 0x580 + node_id
- * HEARTBEAT = 0x700 + node_id
- *
- * NOTE:
- * These macros use the DEFAULT node ID.
- * Runtime operation should use accessor functions instead.
- */
-#define RANGER_CANID_COMMAND       (ACE_CANID_COMMAND_BASE   + RANGER_NODE_ID_DEFAULT)
-#define RANGER_CANID_RESPONSE      (ACE_CANID_RESPONSE_BASE  + RANGER_NODE_ID_DEFAULT)
-#define RANGER_CANID_HEARTBEAT     (ACE_CANID_HEARTBEAT_BASE + RANGER_NODE_ID_DEFAULT)
-
-
-/* =========================
    Public API
    ========================= */
+
+/**
+ * @brief Retrieve latest received ACE command frame (non-blocking)
+ *
+ * Copies the latest received raw CAN frame from the internal RX mailbox,
+ * decodes it into an Ace command frame, and returns it to the caller.
+ *
+ * Function is safe to call from the main loop. It uses a short
+ * critical section to protect against concurrent updates from the
+ * RX interrupt.
+ *
+ * @param[out] frame  Pointer to destination Ace command frame
+ *
+ * @return 1 if a new command frame was available and decoded
+ * @return 0 if no new command frame is available
+ *
+ * @note
+ * - Single-frame mailbox: if a new frame arrives before the previous
+ *   one is consumed, the new frame is dropped.
+ * - Intended for simple command/response flows.
+ * 	 Use a ring buffer for high-throughput use cases,
+ * 	 e.g. bootloader firmware upload.
+ */
+uint8_t ranger_can_receive_command(ace_command_frame_t *frame);
 
 /**
  * @brief Initialize CAN interface
@@ -74,7 +57,6 @@
  * - Prepare internal TX headers
  */
 void ranger_can_init(void);
-
 
 /**
  * @brief Send response frame

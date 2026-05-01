@@ -66,15 +66,21 @@ def update_can_ids() -> None:
 
 # START build custom commands -----------------------------------------------------------------------------------------
 
-
 def build_boot_ping() -> can.Message:
     data = [ACE_CMD_BOOT_PING, ACE_PARAM_BOOT, 0, 0, 0, 0, 0, 0]
     return can.Message(
         arbitration_id=ACE_CAN_ID_COMMAND,
         is_extended_id=False,
-        data=data
+        data=data,
     )
 
+def build_read_led() -> can.Message:
+    data = [ACE_CMD_READ, PARAM_LED_PA1, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+    return can.Message(
+        arbitration_id=ACE_CAN_ID_COMMAND,
+        is_extended_id=False,
+        data=data
+    )
 
 def build_write_led(state: int) -> can.Message:
     data = [
@@ -93,12 +99,11 @@ def build_write_led(state: int) -> can.Message:
         data=data
     )
 
-
 def build_write_node_id(new_node_id: int) -> can.Message:
     data = [
         ACE_CMD_WRITE,
         PARAM_NODE_ID,
-        new_node_id & 0xFF,
+        new_node_id & 0xFF, # masks the new_node_id leaving only the lowest 8 bits. (Only 11-bits available in std. CAN frame)
         0x00,
         0x00,
         0x00,
@@ -110,32 +115,9 @@ def build_write_node_id(new_node_id: int) -> can.Message:
         is_extended_id=False,
         data=data
     )
-
-
-def build_read_led() -> can.Message:
-    data = [
-        ACE_CMD_READ,
-        PARAM_LED_PA1,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-    ]
-    return can.Message(
-        arbitration_id=ACE_CAN_ID_COMMAND,
-        is_extended_id=False,
-        data=data
-    )
-
 
 def build_read_node_id() -> can.Message:
-    data = [
-        ACE_CMD_READ,
-        PARAM_NODE_ID,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    ]
+    data = [ACE_CMD_READ, PARAM_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
     return can.Message(
         arbitration_id=ACE_CAN_ID_COMMAND,
         is_extended_id=False,

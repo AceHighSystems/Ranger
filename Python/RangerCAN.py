@@ -8,30 +8,46 @@ import can
 # Ace protocol / Ranger constants
 # -----------------------------
 
-# AceHigh module specific parameter IDs - this case Ranger-MK1
-PARAM_LED_PA1 = 0xC0   # parameter ID for LED setting
-PARAM_NODE_ID = 0x10   # parameter ID/address for node-id setting
-
 # Current active Ranger node ID -ie. node ic value
 NODE_ID = 0x02
 
-# AceHigh ace protocol specific IDs
+# Ace protocol specific IDs - not added in CAN 8-byte data field but used in CAN arbitration field
 ACE_CAN_ID_COMMAND   = 0x600 + NODE_ID   # host -> Ranger
 ACE_CAN_ID_RESPONSE  = 0x580 + NODE_ID   # Ranger -> host
 ACE_CAN_ID_HEARTBEAT = 0x700 + NODE_ID   # Ranger -> host
 
-ACE_CMD_READ  = 0x01
-ACE_CMD_WRITE = 0x02
+#Ace protocol specific commands IDs - used in the first byte of the CAN 8-Byte data field / Ace protocol Command ID field
+# currently either read or write are the valid operations in the protocol
+ACE_CMD_READ         = 0x01
+ACE_CMD_WRITE        = 0x02
 
-ACE_CMD_BOOT_PING = 0x40
-ACE_PARAM_BOOT = 0x30
+#Ace protocol specific command IDs for Bootloader - used in the first byte of the CAN 8-Byte data field / Ace protocol Command ID field
+ACE_CMD_BOOT_PING    = 0x40
+ACE_CMD_BOOT_START   = 0x41
+ACE_CMD_BOOT_DATA    = 0x42
+ACE_CMD_BOOT_END     = 0x43
+ACE_CMD_BOOT_RUN_APP = 0x44
+
+
+# The parameter ID links to a specific value or system / module variable 
+ACE_PARAM_BOOT         = 0x30   # Parameter ID specific for the booatloader of AceHigh modules
+PARAM_LED_PA1          = 0xC0   # parameter ID for LED variable
+PARAM_NODE_ID          = 0x10   # parameter ID for Node variable
 
 # Status codes - specific for Ace protocol
-STATUS_EXECUTING       = 0x00
-STATUS_QUEUED          = 0x01
-STATUS_DATA_FOLLOWS    = 0x02
-STATUS_UNKNOWN_COMMAND = 0x10
-STATUS_INVALID_PARAM   = 0x11
+# Valid status codes for response frame sent after reception of a command frame from host
+STATUS_OK              = 0x10
+STATUS_QUEUED          = 0x11
+STATUS_DATA_FOLLOWS    = 0x12
+STATUS_UNKNOWN_COMMAND = 0x13
+STATUS_INVALID_PARAM   = 0x14
+
+# Module state codes - states specific for AceHigh modules 
+ACE_STATE_STANDBY      = 0x01  # Module is idle not executing any functions, ready for commands
+ACE_STATE_FAULT        = 0x02  # Module is in fault state
+ACE_STATE_EXECUTING    = 0x03  # Module is executing functions, but can receive new commands
+ACE_STATE_BOOTLOADER   = 0x04  # Module is in bootloader mode
+
 
 CHANNEL = "/dev/cu.usbmodem2080317458421"
 BITRATE = 1000000
@@ -47,7 +63,7 @@ def safe_print(*args, **kwargs):
 
 def status_to_string(status: int) -> str:
     lookup = {
-        STATUS_EXECUTING: "Accepted, executing",
+        STATUS_OK: "Accepted, status OK",
         STATUS_QUEUED: "Accepted, queued",
         STATUS_DATA_FOLLOWS: "Accepted, data follows",
         STATUS_UNKNOWN_COMMAND: "Unknown command",
@@ -157,10 +173,25 @@ def decode_response(msg: can.Message) -> None:
         safe_print(f"  decoded Node ID = 0x{node_id:02X} ({node_id})")
 
     if command_id == ACE_CMD_WRITE and parameter_id == PARAM_NODE_ID:
-        if status_code == STATUS_EXECUTING:
+        if status_code == STATUS_OK:
             safe_print("  Node ID write accepted")
         else:
             safe_print("  Node ID write failed")
+    
+    if command_id == ACE_CMD_BOOT_PING and parameter_id == ACE_PARAM_BOOT:
+        safe_print("  BOOTPING reply received")
+
+        protocol_version = payload[0]
+        bootloader_version = payload[1]
+        module_state = payload[2]
+
+        safe_print(f"  Protocol version = 0x{protocol_version:02X}")
+        safe_print(f"  Bootloader version = 0x{bootloader_version:02X}")
+        safe_print(f"  Module state = 0x{module_state:02X}")
+        if status_code == STATUS_OK:
+            safe_print("  Module alive")
+        if module_state == ACE_STATE_BOOTLOADER:
+            safe_print("  Module is in BOOTLOAD loop")
 
 
 def listener_thread(bus: can.Bus) -> None:
@@ -205,7 +236,7 @@ def print_menu() -> None:
     safe_print("  5  -> WRITE LED OFF, then READ")
     safe_print("  6  -> READ NODE ID")
     safe_print("  7  -> WRITE NODE ID")
-    safe_print("  8  -> SEND BOOTLOADER PING")
+    safe_print("  b  -> SEND BOOTLOADER PING")
     safe_print("  m  -> show menu")
     safe_print("  q  -> quit\n")
 
@@ -273,7 +304,7 @@ def main() -> None:
                     except ValueError:
                         safe_print("Invalid input")
 
-                elif cmd == "8":
+                elif cmd == "b":
                     send_command(bus, build_boot_ping(), "SEND BOOTLOADER PING")
 
                 elif cmd == "m":

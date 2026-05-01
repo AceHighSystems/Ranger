@@ -29,4 +29,16 @@
 		<nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>AceHigh_Inc</name>
+			<type>2</type>
+			<location>C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Inc</location>
+		</link>
+		<link>
+			<name>AceHigh_Src</name>
+			<type>2</type>
+			<location>C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src</location>
+		</link>
+	</linkedResources>
 </projectDescription>

@@ -20,7 +20,6 @@
  */
 #include "ranger_can.h"
 #include "ace_protocol.h"
-
 #include <string.h>
 
 /* =========================

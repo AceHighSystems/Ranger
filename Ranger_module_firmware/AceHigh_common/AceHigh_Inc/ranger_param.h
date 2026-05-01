@@ -8,7 +8,7 @@
 #ifndef INC_RANGER_PARAM_H_
 #define INC_RANGER_PARAM_H_
 
-#include "ace_protocol.h"
+#include "AceHigh_Inc/ace_protocol.h"
 
 /* =========================
    System (0x10–0x1F)

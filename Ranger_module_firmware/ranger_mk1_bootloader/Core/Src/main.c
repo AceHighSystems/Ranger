@@ -12,7 +12,6 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "ranger_app.h"
 #include "ranger_can.h"
 #include "ranger_bootloader.h"
 /* USER CODE END Includes */

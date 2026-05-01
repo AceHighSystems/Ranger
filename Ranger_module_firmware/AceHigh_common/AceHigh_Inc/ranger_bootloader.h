@@ -21,7 +21,10 @@ extern "C" {
 #define RANGER_FLASH_END_ADDR    0x08080000U
 
 /* Bootloader behavior */
-#define RANGER_BOOT_TIMEOUT_MS   6000U
+#define RANGER_BOOTLOADER_VERSION		 0x01
+#define RANGER_BOOT_TIMEOUT_MS   15000U
+#define BOOT_BLINK_INTERVAL_MS   100U
+
 
 /**
  * @brief Initialize bootloader over CAN

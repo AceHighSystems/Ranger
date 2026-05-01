@@ -21,30 +21,30 @@
 #define ACE_CMD_READ                0x01U
 #define ACE_CMD_WRITE               0x02U
 
-/* Following Parameter ID is specific for the Bootloader of ace modules */
+/* Following Parameter ID is specific for the bootloader of ace modules */
 #define ACE_PARAM_BOOT				0x30U
 
-/* Following Command ID are specific for the Bootloader of ace modules */
+/* Following Command ID are specific for the bootloader of ace modules */
 #define ACE_CMD_BOOT_PING           0x40U
 #define ACE_CMD_BOOT_START          0x41U
 #define ACE_CMD_BOOT_DATA           0x42U
 #define ACE_CMD_BOOT_END            0x43U
 #define ACE_CMD_BOOT_RUN_APP        0x44U
 
-/* Following STATUS codes used for response message frame */
-#define ACE_STATUS_OK        		0x00U
-#define ACE_STATUS_QUEUED           0x01U
-#define ACE_STATUS_DATA_FOLLOWS     0x02U
-#define ACE_STATUS_UNKNOWN_COMMAND  0x10U
-#define ACE_STATUS_INVALID_PARAM    0x11U
+/* Following STATUS codes are used for the module response message frames */
+#define ACE_STATUS_OK        		0x10U
+#define ACE_STATUS_QUEUED           0x11U
+#define ACE_STATUS_DATA_FOLLOWS     0x12U
+#define ACE_STATUS_UNKNOWN_COMMAND  0x13U
+#define ACE_STATUS_INVALID_PARAM    0x14U
 /* STATUS codes END */
 
-/* Following STATE codes used for heartbeat message frame */
-#define ACE_STATE_READY             0x01U
+/* Following STATE codes used for the module heartbeat and bootloader response messages
+ * Response is present in payload NOT Status field */
+#define ACE_STATE_STANDBY           0x01U
 #define ACE_STATE_FAULT             0x02U
 #define ACE_STATE_EXECUTING         0x03U
 #define ACE_STATE_BOOTLOADER        0x04U
-#define ACE_STATE_DISABLED          0x05U
 /* STATE codes END */
 
 /**

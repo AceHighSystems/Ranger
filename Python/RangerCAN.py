@@ -7,19 +7,26 @@ import can
 # -----------------------------
 # Ace protocol / Ranger constants
 # -----------------------------
+
+# AceHigh module specific parameter IDs - this case Ranger-MK1
+PARAM_LED_PA1 = 0xC0   # parameter ID for LED setting
+PARAM_NODE_ID = 0x10   # parameter ID/address for node-id setting
+
+# Current active Ranger node ID -ie. node ic value
 NODE_ID = 0x02
 
-PARAM_NODE_ID = 0x10
+# AceHigh ace protocol specific IDs
+ACE_CAN_ID_COMMAND   = 0x600 + NODE_ID   # host -> Ranger
+ACE_CAN_ID_RESPONSE  = 0x580 + NODE_ID   # Ranger -> host
+ACE_CAN_ID_HEARTBEAT = 0x700 + NODE_ID   # Ranger -> host
 
-CAN_ID_COMMAND   = 0x600 + NODE_ID   # host -> Ranger
-CAN_ID_RESPONSE  = 0x580 + NODE_ID   # Ranger -> host
-CAN_ID_HEARTBEAT = 0x700 + NODE_ID   # Ranger -> host
+ACE_CMD_READ  = 0x01
+ACE_CMD_WRITE = 0x02
 
-CMD_READ  = 0x01
-CMD_WRITE = 0x02
+ACE_CMD_BOOT_PING = 0x40
+ACE_PARAM_BOOT = 0x30
 
-PARAM_LED_PA1 = 0xC0
-
+# Status codes - specific for Ace protocol
 STATUS_EXECUTING       = 0x00
 STATUS_QUEUED          = 0x01
 STATUS_DATA_FOLLOWS    = 0x02
@@ -49,9 +56,35 @@ def status_to_string(status: int) -> str:
     return lookup.get(status, f"Unknown status 0x{status:02X}")
 
 
+def update_can_ids() -> None:
+    global ACE_CAN_ID_COMMAND, ACE_CAN_ID_RESPONSE, ACE_CAN_ID_HEARTBEAT
+
+    ACE_CAN_ID_COMMAND   = 0x600 + NODE_ID
+    ACE_CAN_ID_RESPONSE  = 0x580 + NODE_ID
+    ACE_CAN_ID_HEARTBEAT = 0x700 + NODE_ID
+
+
+# START build custom commands -----------------------------------------------------------------------------------------
+
+def build_boot_ping() -> can.Message:
+    data = [ACE_CMD_BOOT_PING, ACE_PARAM_BOOT, 0, 0, 0, 0, 0, 0]
+    return can.Message(
+        arbitration_id=ACE_CAN_ID_COMMAND,
+        is_extended_id=False,
+        data=data,
+    )
+
+def build_read_led() -> can.Message:
+    data = [ACE_CMD_READ, PARAM_LED_PA1, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+    return can.Message(
+        arbitration_id=ACE_CAN_ID_COMMAND,
+        is_extended_id=False,
+        data=data
+    )
+
 def build_write_led(state: int) -> can.Message:
     data = [
-        CMD_WRITE,
+        ACE_CMD_WRITE,
         PARAM_LED_PA1,
         0x01 if state else 0x00,
         0x00,
@@ -61,16 +94,16 @@ def build_write_led(state: int) -> can.Message:
         0x00,
     ]
     return can.Message(
-        arbitration_id=CAN_ID_COMMAND,
+        arbitration_id=ACE_CAN_ID_COMMAND,
         is_extended_id=False,
         data=data
     )
 
 def build_write_node_id(new_node_id: int) -> can.Message:
     data = [
-        CMD_WRITE,
+        ACE_CMD_WRITE,
         PARAM_NODE_ID,
-        new_node_id & 0xFF,  # new node ID
+        new_node_id & 0xFF, # masks the new_node_id leaving only the lowest 8 bits. (Only 11-bits available in std. CAN frame)
         0x00,
         0x00,
         0x00,
@@ -78,41 +111,20 @@ def build_write_node_id(new_node_id: int) -> can.Message:
         0x00,
     ]
     return can.Message(
-        arbitration_id=CAN_ID_COMMAND,
+        arbitration_id=ACE_CAN_ID_COMMAND,
         is_extended_id=False,
         data=data
     )
-
-
-def build_read_led() -> can.Message:
-    data = [
-        CMD_READ,
-        PARAM_LED_PA1,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-    ]
-    return can.Message(
-        arbitration_id=CAN_ID_COMMAND,
-        is_extended_id=False,
-        data=data
-    )
-
 
 def build_read_node_id() -> can.Message:
-    data = [
-        CMD_READ,
-        PARAM_NODE_ID,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    ]
+    data = [ACE_CMD_READ, PARAM_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
     return can.Message(
-        arbitration_id=CAN_ID_COMMAND,
+        arbitration_id=ACE_CAN_ID_COMMAND,
         is_extended_id=False,
         data=data
     )
+
+# END build custom commands --------------------------------------------------------------------------------
 
 
 def print_message(prefix: str, msg: can.Message) -> None:
@@ -136,15 +148,15 @@ def decode_response(msg: can.Message) -> None:
     safe_print(f"  status_code  = 0x{status_code:02X} ({status_to_string(status_code)})")
     safe_print(f"  payload      = {[f'0x{x:02X}' for x in payload]}")
 
-    if command_id == CMD_READ and status_code == STATUS_DATA_FOLLOWS and parameter_id == PARAM_LED_PA1:
+    if command_id == ACE_CMD_READ and status_code == STATUS_DATA_FOLLOWS and parameter_id == PARAM_LED_PA1:
         led_state = payload[0]
         safe_print(f"  decoded LED state = {'OFF' if led_state else 'ON'}")
-    
-    if command_id == CMD_READ and status_code == STATUS_DATA_FOLLOWS and parameter_id == PARAM_NODE_ID:
+
+    if command_id == ACE_CMD_READ and status_code == STATUS_DATA_FOLLOWS and parameter_id == PARAM_NODE_ID:
         node_id = payload[0]
         safe_print(f"  decoded Node ID = 0x{node_id:02X} ({node_id})")
 
-    if command_id == CMD_WRITE and parameter_id == PARAM_NODE_ID:
+    if command_id == ACE_CMD_WRITE and parameter_id == PARAM_NODE_ID:
         if status_code == STATUS_EXECUTING:
             safe_print("  Node ID write accepted")
         else:
@@ -161,9 +173,9 @@ def listener_thread(bus: can.Bus) -> None:
             if msg is None:
                 continue
 
-            if msg.arbitration_id == CAN_ID_HEARTBEAT:
+            if msg.arbitration_id == ACE_CAN_ID_HEARTBEAT:
                 print_message("Heartbeat", msg)
-            elif msg.arbitration_id == CAN_ID_RESPONSE:
+            elif msg.arbitration_id == ACE_CAN_ID_RESPONSE:
                 decode_response(msg)
             else:
                 print_message("Other", msg)
@@ -193,12 +205,14 @@ def print_menu() -> None:
     safe_print("  5  -> WRITE LED OFF, then READ")
     safe_print("  6  -> READ NODE ID")
     safe_print("  7  -> WRITE NODE ID")
+    safe_print("  8  -> SEND BOOTLOADER PING")
     safe_print("  m  -> show menu")
     safe_print("  q  -> quit\n")
 
 
 def main() -> None:
     global running
+    global NODE_ID
 
     safe_print("Opening CAN bus...")
     with can.Bus(interface="slcan", channel=CHANNEL, bitrate=BITRATE) as bus:
@@ -249,19 +263,18 @@ def main() -> None:
                             f"WRITE NODE ID -> {new_id}"
                         )
 
-                        # IMPORTANT: update host-side IDs after a short delay
                         time.sleep(0.2)
 
-                        global NODE_ID, CAN_ID_COMMAND, CAN_ID_RESPONSE, CAN_ID_HEARTBEAT
                         NODE_ID = new_id
-                        CAN_ID_COMMAND   = 0x600 + NODE_ID
-                        CAN_ID_RESPONSE  = 0x580 + NODE_ID
-                        CAN_ID_HEARTBEAT = 0x700 + NODE_ID
+                        update_can_ids()
 
                         safe_print(f"Switched host to new Node ID: {NODE_ID}")
 
                     except ValueError:
                         safe_print("Invalid input")
+
+                elif cmd == "8":
+                    send_command(bus, build_boot_ping(), "SEND BOOTLOADER PING")
 
                 elif cmd == "m":
                     print_menu()

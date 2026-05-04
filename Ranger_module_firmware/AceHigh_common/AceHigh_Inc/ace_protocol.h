@@ -32,11 +32,11 @@
 #define ACE_CMD_BOOT_RUN_APP        0x44U
 
 /* Following STATUS codes are used for the module response message frames */
-#define ACE_STATUS_OK        		0x10U
-#define ACE_STATUS_QUEUED           0x11U
+#define ACE_STATUS_OK        		0x10U  //   Last command was handled without errors
+#define ACE_STATUS_QUEUED           0x11U  // 	if no specific USE-CASE please depricate
 #define ACE_STATUS_DATA_FOLLOWS     0x12U
 #define ACE_STATUS_UNKNOWN_COMMAND  0x13U
-#define ACE_STATUS_INVALID_PARAM    0x14U
+#define ACE_STATUS_UNKNOWN_PARAM    0x14U
 /* STATUS codes END */
 
 /* Following STATE codes used for the module heartbeat and bootloader response messages

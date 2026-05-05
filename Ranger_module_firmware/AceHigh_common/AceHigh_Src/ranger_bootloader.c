@@ -2,7 +2,7 @@
  * ranger_bootloader.c
  *
  *  Created on: Apr 30, 2026
- *      Author: torgj
+ *      Author: Tor Kaufmann Gjerde
  *
  *  Description:
  *  - Ranger bootloader
@@ -39,6 +39,7 @@ static void bootloader_handle_frame(ace_command_frame_t *frame);
 static void bootloader_handle_ping(ace_command_frame_t *frame);
 static void bootloader_handle_start(ace_command_frame_t *frame);
 static void bootloader_handle_data(ace_command_frame_t *frame);
+static void bootloader_handle_end(ace_command_frame_t *frame);
 
 static uint8_t write_flash(uint32_t address, const uint8_t *data, uint8_t len);
 static uint8_t erase_app_area(uint32_t firmware_size);
@@ -178,7 +179,7 @@ void bootloader_handle_frame(ace_command_frame_t *frame)
     	  	  ranger_can_send_response(
     			  frame->command_id,
 				  frame->parameter_id,
-				  ACE_STATUS_INVALID_PARAM,
+				  ACE_STATUS_UNKNOWN_PARAM,
 				  0,
 				  0
     	  	  );
@@ -195,7 +196,7 @@ void bootloader_handle_frame(ace_command_frame_t *frame)
     		ranger_can_send_response(
     			frame->command_id,
 				frame->parameter_id,
-				ACE_STATUS_INVALID_PARAM,
+				ACE_STATUS_UNKNOWN_PARAM,
 				0,
 				0
   	  	  );
@@ -212,12 +213,29 @@ void bootloader_handle_frame(ace_command_frame_t *frame)
     		ranger_can_send_response(
     			frame->command_id,
 				frame->parameter_id,
-				ACE_STATUS_INVALID_PARAM,
+				ACE_STATUS_UNKNOWN_PARAM,
 				0,
 				0
         	);
     	}
     	break;
+
+    case ACE_CMD_BOOT_END:
+    	if (frame->parameter_id == ACE_PARAM_BOOT)
+    	{
+    		bootloader_handle_end(frame);
+    	}
+    	else
+    	{
+    		ranger_can_send_response(
+    				frame->command_id,
+					frame->parameter_id,
+					ACE_STATUS_UNKNOWN_PARAM,
+					0,
+					0
+    		);
+      }
+      break;
 
     default:
       ranger_can_send_response(
@@ -267,8 +285,6 @@ static void bootloader_handle_ping(ace_command_frame_t *frame)
  * 	- resets boot timer
  * 	- sends the expected firmware size and boot session active in response payload
  * 	- initialize boot_received counter to 0 (counter for current bootloader session)
- * 	-
- *
  */
 
 static void bootloader_handle_start(ace_command_frame_t *frame)
@@ -281,10 +297,10 @@ static void bootloader_handle_start(ace_command_frame_t *frame)
    * payload[4] reserved
    */
   boot_expected_size =
-      ((uint32_t)frame->payload[0]) |
-      ((uint32_t)frame->payload[1] << 8) |
-      ((uint32_t)frame->payload[2] << 16) |
-      ((uint32_t)frame->payload[3] << 24);
+      ((uint32_t)frame->payload[1]) |
+      ((uint32_t)frame->payload[2] << 8) |
+      ((uint32_t)frame->payload[3] << 16) |
+      ((uint32_t)frame->payload[4] << 24);
 
   if ((boot_expected_size == 0U) ||
       ((RANGER_APP_START_ADDR + boot_expected_size) > RANGER_FLASH_END_ADDR))
@@ -419,6 +435,8 @@ static void bootloader_handle_data(ace_command_frame_t *frame)
   if (received_sequence != boot_expected_sequence)
   {
 	payload[0] = ACE_STATE_FAULT; // fault as received sequence not equal to expected
+	payload[1] = (uint8_t)(boot_expected_sequence & 0xFF); // lsb
+	payload[2] = (uint8_t)((boot_expected_sequence >> 8) & 0xFF); // msb
 	// specific macro to be added
 
     ranger_can_send_response(
@@ -511,5 +529,120 @@ static void bootloader_handle_data(ace_command_frame_t *frame)
       0,
       0
   );
+}
+
+/**
+ * @brief Handle the BOOT_END command.
+ *
+ * BOOT_END tells the bootloader:
+ * "The host has sent all firmware data frames."
+ *
+ * At this point the bootloader should:
+ * - Check that a boot session is active
+ * - Check that the received byte count matches the expected firmware size
+ * - Validate that the new application looks bootable
+ * - End the boot session
+ *
+ * Later versions can also:
+ * - Flush a partial flash buffer
+ * - Compute and compare CRC
+ * - Store firmware metadata
+ * - Mark application image as valid
+ */
+static void bootloader_handle_end(ace_command_frame_t *frame)
+{
+  uint8_t payload[5] = {0};
+
+  /*
+   * BOOT_END only makes sense if BOOT_START has already started
+   * a firmware update session.
+   */
+  if (!boot_session_active)
+  {
+    payload[0] = ACE_STATE_FAULT;
+
+    ranger_can_send_response(
+        ACE_CMD_BOOT_END,
+        frame->parameter_id,
+        ACE_STATUS_DATA_FOLLOWS,
+        payload,
+        5
+    );
+    return;
+  }
+
+  /*
+   * No more BOOT_DATA frames should be accepted after this point,
+   * unless the host starts a new session using BOOT_START.
+   */
+  boot_session_active = 0U;
+
+  /*
+   * Check that the number of received firmware bytes matches the size
+   * announced during BOOT_START.
+   */
+  if (boot_received != boot_expected_size)
+  {
+    payload[0] = ACE_STATE_FAULT;
+
+    payload[1] = (uint8_t)(boot_received & 0xFF);
+    payload[2] = (uint8_t)((boot_received >> 8) & 0xFF);
+    payload[3] = (uint8_t)((boot_received >> 16) & 0xFF);
+    payload[4] = (uint8_t)((boot_received >> 24) & 0xFF);
+
+    ranger_can_send_response(
+        ACE_CMD_BOOT_END,
+        frame->parameter_id,
+        ACE_STATUS_DATA_FOLLOWS,
+        payload,
+        5
+    );
+    return;
+  }
+
+  /*
+   * Check that the application vector table looks valid.
+   *
+   * This checks:
+   * - Initial stack pointer points to SRAM
+   * - Reset handler points into application flash area
+   */
+  if (!app_is_valid())
+  {
+    payload[0] = ACE_STATE_FAULT;
+
+    ranger_can_send_response(
+        ACE_CMD_BOOT_END,
+        frame->parameter_id,
+        ACE_STATUS_DATA_FOLLOWS,
+        payload,
+        5
+    );
+    return;
+  }
+
+  /*
+   * Success response.
+   *
+   * payload[0] = bootloader/application state
+   * payload[1..4] = received firmware byte count
+   */
+  payload[0] = ACE_STATE_BOOTLOADER;
+  payload[1] = (uint8_t)(boot_received & 0xFF);
+  payload[2] = (uint8_t)((boot_received >> 8) & 0xFF);
+  payload[3] = (uint8_t)((boot_received >> 16) & 0xFF);
+  payload[4] = (uint8_t)((boot_received >> 24) & 0xFF);
+
+  ranger_can_send_response(
+      ACE_CMD_BOOT_END,
+      frame->parameter_id,
+      ACE_STATUS_DATA_FOLLOWS,
+      payload,
+      5
+  );
+
+  HAL_Delay(50);
+  jump_to_app();
+
 }
 

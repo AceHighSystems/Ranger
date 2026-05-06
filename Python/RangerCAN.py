@@ -202,11 +202,11 @@ def decode_response(msg: can.Message) -> None:
     status_code  = msg.data[2]
     payload      = msg.data[3:8]
 
-    #print_message("Response", msg)
-    #safe_print(f"  command_id   = 0x{command_id:02X}")
-    #safe_print(f"  parameter_id = 0x{parameter_id:02X}")
-    #safe_print(f"  status_code  = 0x{status_code:02X} ({status_to_string(status_code)})")
-    #safe_print(f"  payload      = {[f'0x{x:02X}' for x in payload]}")
+    print_message("Response", msg)
+    safe_print(f"  command_id   = 0x{command_id:02X}")
+    safe_print(f"  parameter_id = 0x{parameter_id:02X}")
+    safe_print(f"  status_code  = 0x{status_code:02X} ({status_to_string(status_code)})")
+    safe_print(f"  payload      = {[f'0x{x:02X}' for x in payload]}")
 
     if command_id == ACE_CMD_READ and status_code == STATUS_DATA_FOLLOWS and parameter_id == RANGER_PARAM_LED_PA1:
         led_state = payload[0]

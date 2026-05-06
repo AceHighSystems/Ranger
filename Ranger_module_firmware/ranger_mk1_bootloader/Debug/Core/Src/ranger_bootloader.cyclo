@@ -1,0 +1,11 @@
+C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_bootloader.c:55:6:ranger_bootloader_init	1
+C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_bootloader.c:69:6:ranger_bootloader_task	5
+C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_bootloader.c:95:16:app_is_valid	4
+C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_bootloader.c:127:13:jump_to_app	1
+C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_bootloader.c:151:16:erase_app_area	1
+C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_bootloader.c:157:16:write_flash	1
+C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_bootloader.c:168:6:bootloader_handle_frame	9
+C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_bootloader.c:255:13:bootloader_handle_ping	1
+C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_bootloader.c:290:13:bootloader_handle_start	4
+C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_bootloader.c:382:13:bootloader_handle_data	5
+C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_bootloader.c:552:13:bootloader_handle_end	4

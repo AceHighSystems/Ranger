@@ -1,0 +1,13 @@
+C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_can.c:76:17:ranger_can_get_command_id	4	static
+C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_can.c:81:17:ranger_can_get_response_id	4	static
+C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_can.c:86:17:ranger_can_get_heartbeat_id	4	static
+C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_can.c:97:6:ranger_can_init	8	static
+C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_can.c:133:6:ranger_can_send_response	64	static
+C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_can.c:186:6:ranger_can_send_heartbeat	24	static
+C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_can.c:219:9:ranger_can_receive_command	32	static,ignoring_inline_asm
+C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_can.c:248:9:ranger_can_get_node_id	4	static
+C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_can.c:257:6:ranger_can_request_node_id_change	16	static
+C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_can.c:271:6:ranger_can_process_pending_node_id_change	8	static
+C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_can.c:290:6:ranger_can_set_node_id	16	static,ignoring_inline_asm
+C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_can.c:342:13:ranger_can_config_filter	40	static
+C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_can.c:394:6:HAL_FDCAN_RxFifo0Callback	80	static

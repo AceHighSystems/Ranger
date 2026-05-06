@@ -1,5 +1,4 @@
 # ===== Build output =====
-Debug/
 Release/
 build/
 
@@ -10,7 +9,6 @@ build/
 # ===== Object / binary files =====
 *.o
 *.elf
-*.bin
 *.map
 
 # ===== Logs / temp =====

@@ -21,18 +21,17 @@ ACE_CAN_ID_HEARTBEAT = 0x700 + NODE_ID   # Ranger -> host
 ACE_CMD_READ         = 0x01
 ACE_CMD_WRITE        = 0x02
 
-#Ace protocol specific command IDs for Bootloader - used in the first byte of the CAN 8-Byte data field / Ace protocol Command ID field
+# Ace protocol specific command IDs for Bootloader - used in the first byte of the CAN 8-Byte data field / Ace protocol Command ID field
 ACE_CMD_BOOT_PING    = 0x40
 ACE_CMD_BOOT_START   = 0x41
 ACE_CMD_BOOT_DATA    = 0x42
 ACE_CMD_BOOT_END     = 0x43
 ACE_CMD_BOOT_RUN_APP = 0x44
 
-
 # The parameter ID links to a specific value or system / module variable 
-ACE_PARAM_BOOT         = 0x30   # Parameter ID specific for the booatloader of AceHigh modules
-PARAM_LED_PA1          = 0xC0   # parameter ID for LED variable
-PARAM_NODE_ID          = 0x10   # parameter ID for Node variable
+ACE_PARAM_BOOT                = 0x30   # Parameter ID specific for the booatloader of AceHigh modules
+RANGER_PARAM_LED_PA1          = 0xC0   # parameter ID for LED variable
+RANGER_PARAM_NODE_ID          = 0x10   # parameter ID for Node variable
 
 # Status codes - specific for Ace protocol
 # Valid status codes for response frame sent after reception of a command frame from host
@@ -48,13 +47,21 @@ ACE_STATE_FAULT        = 0x02  # Module is in fault state
 ACE_STATE_EXECUTING    = 0x03  # Module is executing functions, but can receive new commands
 ACE_STATE_BOOTLOADER   = 0x04  # Module is in bootloader mode
 
+# Bootloader test codes
+
+BOOT_FW_SIZE_LSB        = 0x0C # 12 in decimal
+BOOT_FW_SIZE_MID1       = 0x00
+BOOT_FW_SIZE_MID2       = 0x00
+BOOT_FW_SIZE_MSB        = 0x00
+
+BOOT_SEQUENCE_LSB       = 0x00 
+BOOT_SEQUENCE_MSB       = 0x00   
 
 CHANNEL = "/dev/cu.usbmodem2080317458421"
 BITRATE = 1000000
 
 print_lock = threading.Lock()
 running = True
-
 
 def safe_print(*args, **kwargs):
     with print_lock:
@@ -82,6 +89,17 @@ def update_can_ids() -> None:
 
 # START build custom commands -----------------------------------------------------------------------------------------
 
+# BOOTLOADER commands START: ------------------------------------------------------------------------------------------
+#   1. Send BOOT_PING
+#   2. Check response - error handling
+#   3. Send BOOT_START , size = 12 for test
+#   4. Check payload[0] == 1
+#   5. send BOOT_DATA seq 0, bytes 0x11 0x22 0x33 0x44
+#   6. send BOOT_DATA seq 1, bytes 0x55 0x66 0x77 0x88
+#   7. send BOOT_DATA seq 2, bytes 0x99 0xAA 0xBB 0xCC
+#   8. send BOOT_END
+#   9. Expect jump to application
+
 def build_boot_ping() -> can.Message:
     data = [ACE_CMD_BOOT_PING, ACE_PARAM_BOOT, 0, 0, 0, 0, 0, 0]
     return can.Message(
@@ -90,8 +108,34 @@ def build_boot_ping() -> can.Message:
         data=data,
     )
 
+def build_boot_start() -> can.Message:
+    data = [ACE_CMD_BOOT_START, ACE_PARAM_BOOT, 0, BOOT_FW_SIZE_LSB, BOOT_FW_SIZE_MID1, BOOT_FW_SIZE_MID2, BOOT_FW_SIZE_MSB, 0]
+    return can.Message(
+        arbitration_id=ACE_CAN_ID_COMMAND,
+        is_extended_id=False,
+        data=data,
+    )
+
+def build_boot_data() -> can.Message:
+    data = [ACE_CMD_BOOT_START, ACE_PARAM_BOOT, BOOT_SEQUENCE_LSB, BOOT_SEQUENCE_MSB, FW_1, FW_2, FW_3, FW_4]
+    return can.Message(
+        arbitration_id=ACE_CAN_ID_COMMAND,
+        is_extended_id=False,
+        data=data,
+    )
+
+def build_boot_end() -> can.Message:
+    data = [ACE_CMD_BOOT_START, ACE_PARAM_BOOT, BOOT_SEQUENCE_LSB, BOOT_SEQUENCE_MSB, FW_1, FW_2, FW_3, FW_4]
+    return can.Message(
+        arbitration_id=ACE_CAN_ID_COMMAND,
+        is_extended_id=False,
+        data=data,
+    )
+
+# BOOTLOADER commands END: ------------------------------------------------------------------------------------------
+
 def build_read_led() -> can.Message:
-    data = [ACE_CMD_READ, PARAM_LED_PA1, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+    data = [ACE_CMD_READ, RANGER_PARAM_LED_PA1, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
     return can.Message(
         arbitration_id=ACE_CAN_ID_COMMAND,
         is_extended_id=False,
@@ -101,7 +145,7 @@ def build_read_led() -> can.Message:
 def build_write_led(state: int) -> can.Message:
     data = [
         ACE_CMD_WRITE,
-        PARAM_LED_PA1,
+        RANGER_PARAM_LED_PA1,
         0x01 if state else 0x00,
         0x00,
         0x00,
@@ -118,7 +162,7 @@ def build_write_led(state: int) -> can.Message:
 def build_write_node_id(new_node_id: int) -> can.Message:
     data = [
         ACE_CMD_WRITE,
-        PARAM_NODE_ID,
+        RANGER_PARAM_NODE_ID,
         new_node_id & 0xFF, # masks the new_node_id leaving only the lowest 8 bits. (Only 11-bits available in std. CAN frame)
         0x00,
         0x00,
@@ -133,7 +177,7 @@ def build_write_node_id(new_node_id: int) -> can.Message:
     )
 
 def build_read_node_id() -> can.Message:
-    data = [ACE_CMD_READ, PARAM_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+    data = [ACE_CMD_READ, RANGER_PARAM_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
     return can.Message(
         arbitration_id=ACE_CAN_ID_COMMAND,
         is_extended_id=False,
@@ -158,21 +202,21 @@ def decode_response(msg: can.Message) -> None:
     status_code  = msg.data[2]
     payload      = msg.data[3:8]
 
-    print_message("Response", msg)
-    safe_print(f"  command_id   = 0x{command_id:02X}")
-    safe_print(f"  parameter_id = 0x{parameter_id:02X}")
-    safe_print(f"  status_code  = 0x{status_code:02X} ({status_to_string(status_code)})")
-    safe_print(f"  payload      = {[f'0x{x:02X}' for x in payload]}")
+    #print_message("Response", msg)
+    #safe_print(f"  command_id   = 0x{command_id:02X}")
+    #safe_print(f"  parameter_id = 0x{parameter_id:02X}")
+    #safe_print(f"  status_code  = 0x{status_code:02X} ({status_to_string(status_code)})")
+    #safe_print(f"  payload      = {[f'0x{x:02X}' for x in payload]}")
 
-    if command_id == ACE_CMD_READ and status_code == STATUS_DATA_FOLLOWS and parameter_id == PARAM_LED_PA1:
+    if command_id == ACE_CMD_READ and status_code == STATUS_DATA_FOLLOWS and parameter_id == RANGER_PARAM_LED_PA1:
         led_state = payload[0]
         safe_print(f"  decoded LED state = {'OFF' if led_state else 'ON'}")
 
-    if command_id == ACE_CMD_READ and status_code == STATUS_DATA_FOLLOWS and parameter_id == PARAM_NODE_ID:
+    if command_id == ACE_CMD_READ and status_code == STATUS_DATA_FOLLOWS and parameter_id == RANGER_PARAM_NODE_ID:
         node_id = payload[0]
         safe_print(f"  decoded Node ID = 0x{node_id:02X} ({node_id})")
 
-    if command_id == ACE_CMD_WRITE and parameter_id == PARAM_NODE_ID:
+    if command_id == ACE_CMD_WRITE and parameter_id == RANGER_PARAM_NODE_ID:
         if status_code == STATUS_OK:
             safe_print("  Node ID write accepted")
         else:
@@ -192,6 +236,9 @@ def decode_response(msg: can.Message) -> None:
             safe_print("  Module alive")
         if module_state == ACE_STATE_BOOTLOADER:
             safe_print("  Module is in BOOTLOAD loop")
+    
+    if command_id == ACE_CMD_BOOT_DATA and parameter_id == ACE_PARAM_BOOT:
+        variable = 0 # Do nothing
 
 
 def listener_thread(bus: can.Bus) -> None:
@@ -240,6 +287,64 @@ def print_menu() -> None:
     safe_print("  m  -> show menu")
     safe_print("  q  -> quit\n")
 
+
+def program_new_firmware(bus: can.Bus):
+
+    safe_print("Starting firmware update...")
+
+    # Send _BOOT_PING command - for now CAN listener is running in the background
+    data = [ACE_CMD_BOOT_PING, ACE_PARAM_BOOT, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+    
+    can_message = can.Message(
+        arbitration_id=ACE_CAN_ID_COMMAND,
+        is_extended_id=False,
+        data=data
+    )
+    bus.send(can_message)
+    time.sleep(1)
+
+    # Send _BOOT_START command
+    data = [ACE_CMD_BOOT_START, ACE_PARAM_BOOT, 0x00, BOOT_FW_SIZE_LSB, BOOT_FW_SIZE_MID1, BOOT_FW_SIZE_MID2, BOOT_FW_SIZE_MSB, 0x00]
+    can_message = can.Message(
+        arbitration_id=ACE_CAN_ID_COMMAND,
+        is_extended_id=False,
+        data=data
+    )
+    bus.send(can_message)
+    time.sleep(1)
+
+    # _BOOT_DATA
+    # Transfer firmware in chunks of 4 bytes per CAN frame
+    # Increment sequence counter and send as two bytes LSB and MSB 
+    safe_print("Transferring data")
+    firmware = [0x01, 0x02, 0x03, 0x4, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11, 0x12]
+    for i in range(12):
+        seq_counter_LSB = i
+        seq_counter_MSB = 0x00
+        
+        data = [ACE_CMD_BOOT_DATA, ACE_PARAM_BOOT, seq_counter_LSB, seq_counter_MSB, firmware[i], 0x00, 0x00, 0x00]
+        can_message = can.Message(
+            arbitration_id=ACE_CAN_ID_COMMAND,
+            is_extended_id=False,
+            data=data
+        )
+        bus.send(can_message)
+    time.sleep(0.1)
+
+    # _BOOT_END
+    # Signal end the Firmware transfer from the host (module should jump to the application automatically)
+    data = [ACE_CMD_BOOT_END, ACE_PARAM_BOOT, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+    can_message = can.Message(
+        arbitration_id=ACE_CAN_ID_COMMAND,
+        is_extended_id=False,
+        data=data
+    )
+    bus.send(can_message)
+
+    safe_print("Transfer complete!")
+    safe_print("Jumping to application")
+
+# Main loop definition STARTS here -------------------------------------------------------------------------------------
 
 def main() -> None:
     global running
@@ -306,6 +411,9 @@ def main() -> None:
 
                 elif cmd == "b":
                     send_command(bus, build_boot_ping(), "SEND BOOTLOADER PING")
+
+                elif cmd == "p":
+                    program_new_firmware(bus);
 
                 elif cmd == "m":
                     print_menu()

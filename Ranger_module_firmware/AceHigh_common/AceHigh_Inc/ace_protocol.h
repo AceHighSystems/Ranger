@@ -45,6 +45,7 @@
 #define ACE_STATE_FAULT             0x02U
 #define ACE_STATE_EXECUTING         0x03U
 #define ACE_STATE_BOOTLOADER        0x04U
+#define ACE_STATE_APP_VALID			0x05U
 /* STATE codes END */
 
 /**

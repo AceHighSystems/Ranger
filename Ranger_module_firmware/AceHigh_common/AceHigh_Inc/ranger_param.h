@@ -14,7 +14,6 @@
    System (0x10–0x1F)
    ========================= */
 #define RANGER_PARAM_NODE_ID          0x10U
-#define RANGER_PARAM_PROTOCOL_VERSION 0x11U
 #define RANGER_PARAM_STATE            0x12U
 #define RANGER_PARAM_UPTIME           0x13U
 

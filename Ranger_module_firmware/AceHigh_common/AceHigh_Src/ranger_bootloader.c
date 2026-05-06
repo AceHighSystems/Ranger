@@ -256,9 +256,9 @@ static void bootloader_handle_ping(ace_command_frame_t *frame)
 {
   uint8_t payload[5];
 
-  payload[0] = ACE_PROTOCOL_VERSION;
-  payload[1] = RANGER_BOOTLOADER_VERSION;
-  payload[2] = ACE_STATE_BOOTLOADER; // The current module state is bootloader mode
+  payload[0] = ACE_STATE_BOOTLOADER;
+  payload[1] = ACE_PROTOCOL_VERSION;
+  payload[2] = RANGER_BOOTLOADER_VERSION;
   payload[3] = 0x00;
   payload[4] = 0x00;
 
@@ -343,10 +343,10 @@ static void bootloader_handle_start(ace_command_frame_t *frame)
 
   /*
    * Response payload:
-   * byte 0: session active
+   * byte 0: boot session active
    * byte 1-4: accepted firmware size
    */
-  payload[0] = boot_session_active;
+  payload[0] =  ACE_STATE_BOOTLOADER;
   payload[1] = (uint8_t)(boot_expected_size & 0xFF);
   payload[2] = (uint8_t)((boot_expected_size >> 8) & 0xFF);
   payload[3] = (uint8_t)((boot_expected_size >> 16) & 0xFF);
@@ -627,7 +627,7 @@ static void bootloader_handle_end(ace_command_frame_t *frame)
    * payload[0] = bootloader/application state
    * payload[1..4] = received firmware byte count
    */
-  payload[0] = ACE_STATE_BOOTLOADER;
+  payload[0] = ACE_STATE_APP_VALID;
   payload[1] = (uint8_t)(boot_received & 0xFF);
   payload[2] = (uint8_t)((boot_received >> 8) & 0xFF);
   payload[3] = (uint8_t)((boot_received >> 16) & 0xFF);

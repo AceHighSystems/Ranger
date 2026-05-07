@@ -270,7 +270,7 @@ def program_new_firmware(bus: can.Bus):
         data=data
     )
     bus.send(can_message)
-    time.sleep(1)
+    time.sleep(0.1)
 
     # Send _BOOT_START command
     fw_size = len(firmware)
@@ -290,7 +290,7 @@ def program_new_firmware(bus: can.Bus):
         data=data
     )
     bus.send(can_message)
-    time.sleep(1)
+    time.sleep(6)
 
 
     # _BOOT_DATA
@@ -321,8 +321,7 @@ def program_new_firmware(bus: can.Bus):
         bus.send(can_message)
         seq_counter = seq_counter + 1
         print(f"TX: {' '.join(f'{b:02X}' for b in data)}")
-
-    time.sleep(0.1)
+        time.sleep(0.01)
 
     # _BOOT_END
     # Signal end the Firmware transfer from the host (module should jump to the application automatically)

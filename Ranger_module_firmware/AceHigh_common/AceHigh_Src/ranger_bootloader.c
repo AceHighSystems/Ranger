@@ -811,8 +811,6 @@ static void bootloader_handle_data(ace_command_frame_t *frame)
   uint8_t bytes_to_write = 4U;
   uint8_t payload[5] = {0};
 
-  boot_start_ms = HAL_GetTick();
-
   /*
    * BOOT_DATA is only valid after BOOT_START has created an active
    * firmware update session.

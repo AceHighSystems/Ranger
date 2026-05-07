@@ -9,4 +9,4 @@ C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Sr
 C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_bootloader.c:678:13:bootloader_handle_ping	1
 C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_bootloader.c:710:13:bootloader_handle_start	4
 C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_bootloader.c:808:13:bootloader_handle_data	5
-C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_bootloader.c:984:13:bootloader_handle_end	5
+C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_bootloader.c:982:13:bootloader_handle_end	5

@@ -29,8 +29,9 @@ static void MX_FDCAN1_Init(void);
   */
 int main(void)
 {
-  HAL_Init();
   SCB->VTOR = 0x08008000U;
+  HAL_Init();
+
 
   SystemClock_Config();
 

@@ -154,9 +154,9 @@ void ranger_app_tick(void)
   }
 
   /* Blink LED on PA0 as "alive" indicator */
-  if ((now - last_blink_ms) >= 500U)
+  if ((now - last_blink_ms) >= 5000U)
   {
-    last_blink_ms += 500U;
+    last_blink_ms += 5000U;
     HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_0);
   }
 }

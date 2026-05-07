@@ -143,9 +143,9 @@ void ranger_app_tick(void)
   }
 
   /* Send heartbeat every 5 seconds */
-  if ((now - last_heartbeat_ms) >= 1000U)
+  if ((now - last_heartbeat_ms) >= 5000U)
   {
-    last_heartbeat_ms += 1000U;
+    last_heartbeat_ms += 5000U;
 
     ranger_can_send_heartbeat(ACE_STATE_STANDBY,
                               0x00U,       /* module temperature placeholder */
@@ -154,9 +154,9 @@ void ranger_app_tick(void)
   }
 
   /* Blink LED on PA0 as "alive" indicator */
-  if ((now - last_blink_ms) >= 3000U)
+  if ((now - last_blink_ms) >= 500U)
   {
-    last_blink_ms += 1000U;
+    last_blink_ms += 500U;
     HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_0);
   }
 }

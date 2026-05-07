@@ -24,7 +24,7 @@ extern "C" {
 
 /* Bootloader behavior */
 #define RANGER_BOOTLOADER_VERSION	0x01
-#define RANGER_BOOT_TIMEOUT_MS    	1000U
+#define RANGER_BOOT_TIMEOUT_MS    	5000U
 #define BOOT_BLINK_INTERVAL_MS   	100U
 
 

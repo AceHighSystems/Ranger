@@ -143,7 +143,7 @@ void ranger_app_tick(void)
   }
 
   /* Send heartbeat every 5 seconds */
-  if ((now - last_heartbeat_ms) >= 2000U)
+  if ((now - last_heartbeat_ms) >= 5000U)
   {
     last_heartbeat_ms += 5000U;
 

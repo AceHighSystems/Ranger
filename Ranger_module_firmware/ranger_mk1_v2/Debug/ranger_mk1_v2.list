@@ -708,60 +708,60 @@ void ranger_app_tick(void)
   }
 
   /* Send heartbeat every 5 seconds */
-  if ((now - last_heartbeat_ms) >= 2000U)
+  if ((now - last_heartbeat_ms) >= 5000U)
  800859a:	4b18      	ldr	r3, [pc, #96]	@ (80085fc <ranger_app_tick+0xac>)
  800859c:	681b      	ldr	r3, [r3, #0]
  800859e:	68fa      	ldr	r2, [r7, #12]
  80085a0:	1ad3      	subs	r3, r2, r3
- 80085a2:	f5b3 6ffa 	cmp.w	r3, #2000	@ 0x7d0
- 80085a6:	d30d      	bcc.n	80085c4 <ranger_app_tick+0x74>
+ 80085a2:	f241 3287 	movw	r2, #4999	@ 0x1387
+ 80085a6:	4293      	cmp	r3, r2
+ 80085a8:	d90d      	bls.n	80085c6 <ranger_app_tick+0x76>
   {
     last_heartbeat_ms += 5000U;
- 80085a8:	4b14      	ldr	r3, [pc, #80]	@ (80085fc <ranger_app_tick+0xac>)
- 80085aa:	681b      	ldr	r3, [r3, #0]
- 80085ac:	f503 539c 	add.w	r3, r3, #4992	@ 0x1380
- 80085b0:	3308      	adds	r3, #8
- 80085b2:	4a12      	ldr	r2, [pc, #72]	@ (80085fc <ranger_app_tick+0xac>)
- 80085b4:	6013      	str	r3, [r2, #0]
+ 80085aa:	4b14      	ldr	r3, [pc, #80]	@ (80085fc <ranger_app_tick+0xac>)
+ 80085ac:	681b      	ldr	r3, [r3, #0]
+ 80085ae:	f503 539c 	add.w	r3, r3, #4992	@ 0x1380
+ 80085b2:	3308      	adds	r3, #8
+ 80085b4:	4a11      	ldr	r2, [pc, #68]	@ (80085fc <ranger_app_tick+0xac>)
+ 80085b6:	6013      	str	r3, [r2, #0]
 
     ranger_can_send_heartbeat(ACE_STATE_STANDBY,
- 80085b6:	4b10      	ldr	r3, [pc, #64]	@ (80085f8 <ranger_app_tick+0xa8>)
- 80085b8:	681b      	ldr	r3, [r3, #0]
- 80085ba:	2200      	movs	r2, #0
- 80085bc:	2100      	movs	r1, #0
- 80085be:	2001      	movs	r0, #1
- 80085c0:	f000 f9a4 	bl	800890c <ranger_can_send_heartbeat>
+ 80085b8:	4b0f      	ldr	r3, [pc, #60]	@ (80085f8 <ranger_app_tick+0xa8>)
+ 80085ba:	681b      	ldr	r3, [r3, #0]
+ 80085bc:	2200      	movs	r2, #0
+ 80085be:	2100      	movs	r1, #0
+ 80085c0:	2001      	movs	r0, #1
+ 80085c2:	f000 f9a3 	bl	800890c <ranger_can_send_heartbeat>
                               0x0000U,     /* error flags */
                               uptime_s);
   }
 
   /* Blink LED on PA0 as "alive" indicator */
   if ((now - last_blink_ms) >= 3000U)
- 80085c4:	4b0e      	ldr	r3, [pc, #56]	@ (8008600 <ranger_app_tick+0xb0>)
- 80085c6:	681b      	ldr	r3, [r3, #0]
- 80085c8:	68fa      	ldr	r2, [r7, #12]
- 80085ca:	1ad3      	subs	r3, r2, r3
- 80085cc:	f640 32b7 	movw	r2, #2999	@ 0xbb7
- 80085d0:	4293      	cmp	r3, r2
- 80085d2:	d90a      	bls.n	80085ea <ranger_app_tick+0x9a>
+ 80085c6:	4b0e      	ldr	r3, [pc, #56]	@ (8008600 <ranger_app_tick+0xb0>)
+ 80085c8:	681b      	ldr	r3, [r3, #0]
+ 80085ca:	68fa      	ldr	r2, [r7, #12]
+ 80085cc:	1ad3      	subs	r3, r2, r3
+ 80085ce:	f640 32b7 	movw	r2, #2999	@ 0xbb7
+ 80085d2:	4293      	cmp	r3, r2
+ 80085d4:	d90a      	bls.n	80085ec <ranger_app_tick+0x9c>
   {
     last_blink_ms += 1000U;
- 80085d4:	4b0a      	ldr	r3, [pc, #40]	@ (8008600 <ranger_app_tick+0xb0>)
- 80085d6:	681b      	ldr	r3, [r3, #0]
- 80085d8:	f503 737a 	add.w	r3, r3, #1000	@ 0x3e8
- 80085dc:	4a08      	ldr	r2, [pc, #32]	@ (8008600 <ranger_app_tick+0xb0>)
- 80085de:	6013      	str	r3, [r2, #0]
+ 80085d6:	4b0a      	ldr	r3, [pc, #40]	@ (8008600 <ranger_app_tick+0xb0>)
+ 80085d8:	681b      	ldr	r3, [r3, #0]
+ 80085da:	f503 737a 	add.w	r3, r3, #1000	@ 0x3e8
+ 80085de:	4a08      	ldr	r2, [pc, #32]	@ (8008600 <ranger_app_tick+0xb0>)
+ 80085e0:	6013      	str	r3, [r2, #0]
     HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_0);
- 80085e0:	2101      	movs	r1, #1
- 80085e2:	f04f 4090 	mov.w	r0, #1207959552	@ 0x48000000
- 80085e6:	f001 fe55 	bl	800a294 <HAL_GPIO_TogglePin>
+ 80085e2:	2101      	movs	r1, #1
+ 80085e4:	f04f 4090 	mov.w	r0, #1207959552	@ 0x48000000
+ 80085e8:	f001 fe54 	bl	800a294 <HAL_GPIO_TogglePin>
   }
 }
- 80085ea:	bf00      	nop
- 80085ec:	3710      	adds	r7, #16
- 80085ee:	46bd      	mov	sp, r7
- 80085f0:	bd80      	pop	{r7, pc}
- 80085f2:	bf00      	nop
+ 80085ec:	bf00      	nop
+ 80085ee:	3710      	adds	r7, #16
+ 80085f0:	46bd      	mov	sp, r7
+ 80085f2:	bd80      	pop	{r7, pc}
  80085f4:	20000098 	.word	0x20000098
  80085f8:	20000094 	.word	0x20000094
  80085fc:	2000009c 	.word	0x2000009c

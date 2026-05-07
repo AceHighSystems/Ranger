@@ -143,18 +143,18 @@ void ranger_app_tick(void)
   }
 
   /* Send heartbeat every 5 seconds */
-  if ((now - last_heartbeat_ms) >= 5000U)
+  if ((now - last_heartbeat_ms) >= 2000U)
   {
     last_heartbeat_ms += 5000U;
 
-    ranger_can_send_heartbeat(ACE_STATE_READY,
+    ranger_can_send_heartbeat(ACE_STATE_STANDBY,
                               0x00U,       /* module temperature placeholder */
                               0x0000U,     /* error flags */
                               uptime_s);
   }
 
   /* Blink LED on PA0 as "alive" indicator */
-  if ((now - last_blink_ms) >= 1000U)
+  if ((now - last_blink_ms) >= 3000U)
   {
     last_blink_ms += 1000U;
     HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_0);
@@ -246,7 +246,7 @@ static void ranger_app_handle_read(const ace_command_frame_t *frame)
       /* Unknown parameter */
       ranger_can_send_response(ACE_CMD_READ,
                                frame->parameter_id,
-                               ACE_STATUS_INVALID_PARAM,
+							   ACE_STATUS_UNKNOWN_PARAM,
                                NULL,
                                0U);
       break;
@@ -279,7 +279,7 @@ static void ranger_app_handle_write(const ace_command_frame_t *frame)
         /* Invalid value */
         ranger_can_send_response(ACE_CMD_WRITE,
                                  RANGER_PARAM_LED_PA1,
-                                 ACE_STATUS_INVALID_PARAM,
+								 ACE_STATUS_UNKNOWN_PARAM,
                                  NULL,
                                  0U);
       }
@@ -303,7 +303,7 @@ static void ranger_app_handle_write(const ace_command_frame_t *frame)
       {
         ranger_can_send_response(ACE_CMD_WRITE,
                                  RANGER_PARAM_NODE_ID,
-                                 ACE_STATUS_INVALID_PARAM,
+								 ACE_STATUS_UNKNOWN_PARAM,
                                  NULL,
                                  0U);
       }
@@ -312,7 +312,7 @@ static void ranger_app_handle_write(const ace_command_frame_t *frame)
     default:
       ranger_can_send_response(ACE_CMD_WRITE,
                                frame->parameter_id,
-                               ACE_STATUS_INVALID_PARAM,
+							   ACE_STATUS_UNKNOWN_PARAM,
                                NULL,
                                0U);
       break;

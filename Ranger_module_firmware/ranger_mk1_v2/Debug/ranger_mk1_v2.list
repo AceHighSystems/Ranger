@@ -35,17 +35,17 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  15 .debug_rnglists 000006f2  00000000  00000000  00010a80  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_macro  0001da92  00000000  00000000  00011172  2**0
+ 16 .debug_macro  0001da88  00000000  00000000  00011172  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .debug_line   0000a36f  00000000  00000000  0002ec04  2**0
+ 17 .debug_line   0000a537  00000000  00000000  0002ebfa  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_str    000bbbb3  00000000  00000000  00038f73  2**0
+ 18 .debug_str    000bbc1e  00000000  00000000  00039131  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .comment      00000043  00000000  00000000  000f4b26  2**0
+ 19 .comment      00000043  00000000  00000000  000f4d4f  2**0
                   CONTENTS, READONLY
- 20 .debug_frame  000024cc  00000000  00000000  000f4b6c  2**2
+ 20 .debug_frame  000024cc  00000000  00000000  000f4d94  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 21 .debug_line_str 00000073  00000000  00000000  000f7038  2**0
+ 21 .debug_line_str 00000073  00000000  00000000  000f7260  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -708,42 +708,42 @@ void ranger_app_tick(void)
   }
 
   /* Send heartbeat every 5 seconds */
-  if ((now - last_heartbeat_ms) >= 5000U)
+  if ((now - last_heartbeat_ms) >= 2000U)
  800859a:	4b18      	ldr	r3, [pc, #96]	@ (80085fc <ranger_app_tick+0xac>)
  800859c:	681b      	ldr	r3, [r3, #0]
  800859e:	68fa      	ldr	r2, [r7, #12]
  80085a0:	1ad3      	subs	r3, r2, r3
- 80085a2:	f241 3287 	movw	r2, #4999	@ 0x1387
- 80085a6:	4293      	cmp	r3, r2
- 80085a8:	d90d      	bls.n	80085c6 <ranger_app_tick+0x76>
+ 80085a2:	f5b3 6ffa 	cmp.w	r3, #2000	@ 0x7d0
+ 80085a6:	d30d      	bcc.n	80085c4 <ranger_app_tick+0x74>
   {
     last_heartbeat_ms += 5000U;
- 80085aa:	4b14      	ldr	r3, [pc, #80]	@ (80085fc <ranger_app_tick+0xac>)
- 80085ac:	681b      	ldr	r3, [r3, #0]
- 80085ae:	f503 539c 	add.w	r3, r3, #4992	@ 0x1380
- 80085b2:	3308      	adds	r3, #8
- 80085b4:	4a11      	ldr	r2, [pc, #68]	@ (80085fc <ranger_app_tick+0xac>)
- 80085b6:	6013      	str	r3, [r2, #0]
+ 80085a8:	4b14      	ldr	r3, [pc, #80]	@ (80085fc <ranger_app_tick+0xac>)
+ 80085aa:	681b      	ldr	r3, [r3, #0]
+ 80085ac:	f503 539c 	add.w	r3, r3, #4992	@ 0x1380
+ 80085b0:	3308      	adds	r3, #8
+ 80085b2:	4a12      	ldr	r2, [pc, #72]	@ (80085fc <ranger_app_tick+0xac>)
+ 80085b4:	6013      	str	r3, [r2, #0]
 
-    ranger_can_send_heartbeat(ACE_STATE_READY,
- 80085b8:	4b0f      	ldr	r3, [pc, #60]	@ (80085f8 <ranger_app_tick+0xa8>)
- 80085ba:	681b      	ldr	r3, [r3, #0]
- 80085bc:	2200      	movs	r2, #0
- 80085be:	2100      	movs	r1, #0
- 80085c0:	2001      	movs	r0, #1
- 80085c2:	f000 f9a3 	bl	800890c <ranger_can_send_heartbeat>
+    ranger_can_send_heartbeat(ACE_STATE_STANDBY,
+ 80085b6:	4b10      	ldr	r3, [pc, #64]	@ (80085f8 <ranger_app_tick+0xa8>)
+ 80085b8:	681b      	ldr	r3, [r3, #0]
+ 80085ba:	2200      	movs	r2, #0
+ 80085bc:	2100      	movs	r1, #0
+ 80085be:	2001      	movs	r0, #1
+ 80085c0:	f000 f9a4 	bl	800890c <ranger_can_send_heartbeat>
                               0x0000U,     /* error flags */
                               uptime_s);
   }
 
   /* Blink LED on PA0 as "alive" indicator */
-  if ((now - last_blink_ms) >= 1000U)
- 80085c6:	4b0e      	ldr	r3, [pc, #56]	@ (8008600 <ranger_app_tick+0xb0>)
- 80085c8:	681b      	ldr	r3, [r3, #0]
- 80085ca:	68fa      	ldr	r2, [r7, #12]
- 80085cc:	1ad3      	subs	r3, r2, r3
- 80085ce:	f5b3 7f7a 	cmp.w	r3, #1000	@ 0x3e8
- 80085d2:	d30a      	bcc.n	80085ea <ranger_app_tick+0x9a>
+  if ((now - last_blink_ms) >= 3000U)
+ 80085c4:	4b0e      	ldr	r3, [pc, #56]	@ (8008600 <ranger_app_tick+0xb0>)
+ 80085c6:	681b      	ldr	r3, [r3, #0]
+ 80085c8:	68fa      	ldr	r2, [r7, #12]
+ 80085ca:	1ad3      	subs	r3, r2, r3
+ 80085cc:	f640 32b7 	movw	r2, #2999	@ 0xbb7
+ 80085d0:	4293      	cmp	r3, r2
+ 80085d2:	d90a      	bls.n	80085ea <ranger_app_tick+0x9a>
   {
     last_blink_ms += 1000U;
  80085d4:	4b0a      	ldr	r3, [pc, #40]	@ (8008600 <ranger_app_tick+0xb0>)
@@ -821,7 +821,7 @@ void ranger_app_handle_command(const ace_command_frame_t *frame)
  8008638:	2300      	movs	r3, #0
  800863a:	9300      	str	r3, [sp, #0]
  800863c:	2300      	movs	r3, #0
- 800863e:	2210      	movs	r2, #16
+ 800863e:	2213      	movs	r2, #19
  8008640:	f000 f912 	bl	8008868 <ranger_can_send_response>
                                ACE_STATUS_UNKNOWN_COMMAND,
                                NULL,
@@ -877,7 +877,7 @@ static void ranger_app_handle_read(const ace_command_frame_t *frame)
  800867c:	f107 0308 	add.w	r3, r7, #8
  8008680:	2201      	movs	r2, #1
  8008682:	9200      	str	r2, [sp, #0]
- 8008684:	2202      	movs	r2, #2
+ 8008684:	2212      	movs	r2, #18
  8008686:	21c0      	movs	r1, #192	@ 0xc0
  8008688:	2001      	movs	r0, #1
  800868a:	f000 f8ed 	bl	8008868 <ranger_can_send_response>
@@ -909,7 +909,7 @@ static void ranger_app_handle_read(const ace_command_frame_t *frame)
  80086a6:	f107 0308 	add.w	r3, r7, #8
  80086aa:	2202      	movs	r2, #2
  80086ac:	9200      	str	r2, [sp, #0]
- 80086ae:	2202      	movs	r2, #2
+ 80086ae:	2212      	movs	r2, #18
  80086b0:	2180      	movs	r1, #128	@ 0x80
  80086b2:	2001      	movs	r0, #1
  80086b4:	f000 f8d8 	bl	8008868 <ranger_can_send_response>
@@ -931,7 +931,7 @@ static void ranger_app_handle_read(const ace_command_frame_t *frame)
  80086c2:	f107 0308 	add.w	r3, r7, #8
  80086c6:	2201      	movs	r2, #1
  80086c8:	9200      	str	r2, [sp, #0]
- 80086ca:	2202      	movs	r2, #2
+ 80086ca:	2212      	movs	r2, #18
  80086cc:	2110      	movs	r1, #16
  80086ce:	2001      	movs	r0, #1
  80086d0:	f000 f8ca 	bl	8008868 <ranger_can_send_response>
@@ -952,10 +952,10 @@ static void ranger_app_handle_read(const ace_command_frame_t *frame)
  80086da:	2300      	movs	r3, #0
  80086dc:	9300      	str	r3, [sp, #0]
  80086de:	2300      	movs	r3, #0
- 80086e0:	2211      	movs	r2, #17
+ 80086e0:	2214      	movs	r2, #20
  80086e2:	2001      	movs	r0, #1
  80086e4:	f000 f8c0 	bl	8008868 <ranger_can_send_response>
-                               ACE_STATUS_INVALID_PARAM,
+							   ACE_STATUS_UNKNOWN_PARAM,
                                NULL,
                                0U);
       break;
@@ -1006,12 +1006,12 @@ static void ranger_app_handle_write(const ace_command_frame_t *frame)
  800871e:	2300      	movs	r3, #0
  8008720:	9300      	str	r3, [sp, #0]
  8008722:	2300      	movs	r3, #0
- 8008724:	2200      	movs	r2, #0
+ 8008724:	2210      	movs	r2, #16
  8008726:	21c0      	movs	r1, #192	@ 0xc0
  8008728:	2002      	movs	r0, #2
  800872a:	f000 f89d 	bl	8008868 <ranger_can_send_response>
                                  RANGER_PARAM_LED_PA1,
-                                 ACE_STATUS_INVALID_PARAM,
+								 ACE_STATUS_UNKNOWN_PARAM,
                                  NULL,
                                  0U);
       }
@@ -1021,7 +1021,7 @@ static void ranger_app_handle_write(const ace_command_frame_t *frame)
  8008730:	2300      	movs	r3, #0
  8008732:	9300      	str	r3, [sp, #0]
  8008734:	2300      	movs	r3, #0
- 8008736:	2211      	movs	r2, #17
+ 8008736:	2214      	movs	r2, #20
  8008738:	21c0      	movs	r1, #192	@ 0xc0
  800873a:	2002      	movs	r0, #2
  800873c:	f000 f894 	bl	8008868 <ranger_can_send_response>
@@ -1053,12 +1053,12 @@ static void ranger_app_handle_write(const ace_command_frame_t *frame)
  800875e:	2300      	movs	r3, #0
  8008760:	9300      	str	r3, [sp, #0]
  8008762:	2300      	movs	r3, #0
- 8008764:	2200      	movs	r2, #0
+ 8008764:	2210      	movs	r2, #16
  8008766:	2110      	movs	r1, #16
  8008768:	2002      	movs	r0, #2
  800876a:	f000 f87d 	bl	8008868 <ranger_can_send_response>
                                  RANGER_PARAM_NODE_ID,
-                                 ACE_STATUS_INVALID_PARAM,
+								 ACE_STATUS_UNKNOWN_PARAM,
                                  NULL,
                                  0U);
       }
@@ -1068,7 +1068,7 @@ static void ranger_app_handle_write(const ace_command_frame_t *frame)
  8008770:	2300      	movs	r3, #0
  8008772:	9300      	str	r3, [sp, #0]
  8008774:	2300      	movs	r3, #0
- 8008776:	2211      	movs	r2, #17
+ 8008776:	2214      	movs	r2, #20
  8008778:	2110      	movs	r1, #16
  800877a:	2002      	movs	r0, #2
  800877c:	f000 f874 	bl	8008868 <ranger_can_send_response>
@@ -1084,10 +1084,10 @@ static void ranger_app_handle_write(const ace_command_frame_t *frame)
  8008786:	2300      	movs	r3, #0
  8008788:	9300      	str	r3, [sp, #0]
  800878a:	2300      	movs	r3, #0
- 800878c:	2211      	movs	r2, #17
+ 800878c:	2214      	movs	r2, #20
  800878e:	2002      	movs	r0, #2
  8008790:	f000 f86a 	bl	8008868 <ranger_can_send_response>
-                               ACE_STATUS_INVALID_PARAM,
+							   ACE_STATUS_UNKNOWN_PARAM,
                                NULL,
                                0U);
       break;

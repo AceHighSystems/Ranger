@@ -14,6 +14,10 @@
 #include "ranger_bootloader.h"
 #include "ranger_can.h"
 #include "ace_protocol.h"
+
+#include "stm32g491xx.h"
+#include "stm32g4xx_hal_flash.h"
+
 #include "main.h"
 
 
@@ -31,6 +35,11 @@ static uint32_t boot_write_address = RANGER_APP_START_ADDR;
 static uint16_t boot_expected_sequence = 0;
 static uint8_t  boot_session_active = 0;
 
+static uint8_t flash_buffer[8] = {0};
+static uint8_t flash_buffer_count = 0U;
+static uint32_t flash_buffer_address = 0U;
+
+
 /* =========================
    Private function prototypes
    ========================= */
@@ -41,10 +50,12 @@ static void bootloader_handle_start(ace_command_frame_t *frame);
 static void bootloader_handle_data(ace_command_frame_t *frame);
 static void bootloader_handle_end(ace_command_frame_t *frame);
 
-static uint8_t write_flash(uint32_t address, const uint8_t *data, uint8_t len);
-static uint8_t erase_app_area(uint32_t firmware_size);
-static void jump_to_app(void);
 static uint8_t app_is_valid(void);
+static void jump_to_app(void);
+
+static uint8_t erase_app_area(uint32_t firmware_size);
+static uint8_t write_flash(uint32_t address, const uint8_t *data, uint8_t len);
+static uint8_t flush_flash_buffer(void);
 
 
 /**
@@ -82,11 +93,14 @@ void ranger_bootloader_task(void)
     bootloader_handle_frame(&can_frame);
   }
 
-  if ((now - boot_start_ms) > RANGER_BOOT_TIMEOUT_MS)
+  if (!boot_session_active)
   {
-    if (app_is_valid())
+    if ((now - boot_start_ms) > RANGER_BOOT_TIMEOUT_MS)
     {
-    	jump_to_app();
+      if (app_is_valid())
+      {
+        jump_to_app();
+      }
     }
   }
 }
@@ -120,6 +134,15 @@ static uint8_t app_is_valid(void)
     return 0U;
   }
 
+  /*
+   * Cortex-M reset handler address should have bit 0 set.
+   * This indicates Thumb state.
+   */
+  if ((app_reset & 0x1U) == 0U)
+  {
+    return 0U;
+  }
+
   return 1U;
 }
 
@@ -148,18 +171,413 @@ static void jump_to_app(void)
   app_entry(); // jump to the reset handler
 }
 
+/**
+ * @brief Erase the flash pages used by the application firmware.
+ *
+ * This function is called during BOOT_START before new firmware data
+ * is written into flash.
+ *
+ * The function:
+ * - Checks that the firmware size is valid
+ * - Calculates which flash pages belong to the application area
+ * - Unlocks flash memory
+ * - Erases the required flash pages
+ * - Locks flash memory again
+ *
+ * STM32G4 flash is divided into pages.
+ * Flash pages must be erased before new data can be programmed.
+ *
+ * @param firmware_size
+ * Total firmware size in bytes received from the host PC.
+ *
+ * @return
+ * 1U = success
+ * 0U = failure
+ */
 static uint8_t erase_app_area(uint32_t firmware_size)
 {
-  (void)firmware_size;
-  return 1U; // success
+  HAL_StatusTypeDef status;
+
+  /*
+   * Structure used by the STM32 HAL driver to describe
+   * what flash erase operation we want to perform.
+   */
+  FLASH_EraseInitTypeDef erase_init;
+
+  /*
+   * If HAL_FLASHEx_Erase() fails,
+   * the HAL driver stores the failing page number here.
+   */
+  uint32_t page_error = 0U;
+
+  /*
+   * start_page:
+   * First flash page belonging to the application area.
+   */
+  uint32_t start_page;
+
+  /*
+   * number_of_pages:
+   * How many flash pages belong to the full application area.
+   *
+   * We erase the complete application area, not only the number of
+   * pages needed by the new firmware.
+   *
+   * This avoids leaving old firmware bytes behind if the previous
+   * firmware was larger than the new firmware.
+   */
+  uint32_t number_of_pages;
+
+  /*
+   * Reject invalid firmware size.
+   *
+   * A firmware size of zero bytes makes no sense.
+   */
+  if (firmware_size == 0U)
+  {
+    return 0U;
+  }
+
+  /*
+   * Make sure the firmware fits inside the allowed
+   * application flash area.
+   *
+   * RANGER_APP_START_ADDR:
+   * Start address of the application region.
+   *
+   * RANGER_FLASH_END_ADDR:
+   * End address of available flash memory.
+   */
+  if ((RANGER_APP_START_ADDR + firmware_size) > RANGER_FLASH_END_ADDR)
+  {
+    return 0U;
+  }
+
+  /*
+   * Convert application flash address into flash page number.
+   *
+   * FLASH_BASE:
+   * Base address of STM32 internal flash memory.
+   *
+   * FLASH_PAGE_SIZE:
+   * Size of one flash page in bytes.
+   *
+   * Example:
+   *
+   * Application starts at:
+   * 0x08008000
+   *
+   * Flash base:
+   * 0x08000000
+   *
+   * Difference:
+   * 0x00008000
+   *
+   * If flash page size is 2048 bytes:
+   *
+   * 0x8000 / 2048 = page 16
+   */
+  start_page =
+      (RANGER_APP_START_ADDR - FLASH_BASE) / FLASH_PAGE_SIZE;
+
+  /*
+   * Erase the complete application flash area.
+   *
+   * This is intentionally not based only on firmware_size.
+   * If the old firmware was larger than the new firmware, erasing only
+   * the new firmware size could leave old bytes in flash.
+   */
+  number_of_pages =
+		  RANGER_APP_FLASH_SIZE / FLASH_PAGE_SIZE;
+
+  /*
+   * Flash memory is protected against accidental writes/erases.
+   *
+   * Unlock flash before erase/program operations.
+   */
+  HAL_FLASH_Unlock();
+
+  /*
+   * Configure erase operation settings.
+   */
+
+  /*
+   * We want to erase flash pages.
+   */
+  erase_init.TypeErase = FLASH_TYPEERASE_PAGES;
+
+  /*
+   * Use flash bank 1.
+   *
+   * Most smaller STM32G4 devices only use BANK_1.
+   */
+  erase_init.Banks = FLASH_BANK_1;
+
+  /*
+   * First page to erase.
+   */
+  erase_init.Page = start_page;
+
+  /*
+   * Total number of pages to erase.
+   */
+  erase_init.NbPages = number_of_pages;
+
+  /*
+   * Execute the erase operation.
+   *
+   * status:
+   * HAL_OK if successful.
+   *
+   * &page_error:
+   * '&' means:
+   * "address of variable"
+   *
+   * The HAL driver needs the memory address of page_error
+   * so it can write error information into it.
+   */
+  status = HAL_FLASHEx_Erase(&erase_init, &page_error);
+
+  /*
+   * Lock flash again after operation completes.
+   */
+  HAL_FLASH_Lock();
+
+  /*
+   * Check whether erase succeeded.
+   */
+  if (status != HAL_OK)
+  {
+    return 0U;
+  }
+
+  return 1U;
 }
 
 static uint8_t write_flash(uint32_t address, const uint8_t *data, uint8_t len)
 {
-  (void)address;
-  (void)data;
-  (void)len;
-  return 1U; // success
+  uint8_t i;
+
+  /*
+   * Safety check:
+   *
+   * If len is greater than zero, data must point to valid memory.
+   *
+   * In C, NULL pointer means "points to nothing".
+   * We check against 0 here because NULL is usually defined as 0.
+   */
+  if ((data == 0) && (len > 0U))
+  {
+    return 0U;
+  }
+
+  if ((address < RANGER_APP_START_ADDR) ||
+      ((address + len) > RANGER_FLASH_END_ADDR))
+  {
+    return 0U;
+  }
+
+  /*
+   * Process each incoming firmware byte one by one.
+   *
+   * This is simple and safe.
+   *
+   * Even though the CAN frame normally gives us 4 bytes,
+   * looping byte-by-byte makes the function also work for the final
+   * partial frame.
+   */
+  for (i = 0U; i < len; i++)
+  {
+    /*
+     * If the buffer is empty, this byte starts a new 8-byte flash word.
+     *
+     * Remember the flash address belonging to the first byte.
+     *
+     * address + i means:
+     * current byte address = base address passed into this function
+     *                        plus loop index
+     */
+    if (flash_buffer_count == 0U)
+    {
+      flash_buffer_address = address + i;
+    }
+
+    /*
+     * Store one byte into the temporary flash buffer.
+     *
+     * flash_buffer_count is used as the array index.
+     *
+     * Example:
+     * flash_buffer_count = 0 -> write flash_buffer[0]
+     * flash_buffer_count = 1 -> write flash_buffer[1]
+     */
+    flash_buffer[flash_buffer_count] = data[i];
+
+    /*
+     * We now have one more byte stored in the buffer.
+     */
+    flash_buffer_count++;
+
+    /*
+     * Once the buffer contains 8 bytes, it can be programmed into flash.
+     */
+    if (flash_buffer_count >= 8U)
+    {
+      if (!flush_flash_buffer())
+      {
+        return 0U;
+      }
+    }
+  }
+
+  return 1U;
+}
+
+/**
+ * @brief Program the current 8-byte flash buffer into STM32 flash.
+ *
+ * STM32G4 flash programming uses 64-bit double words.
+ *
+ * This function:
+ * - Pads incomplete final buffer with 0xFF
+ * - Checks that the flash address is 8-byte aligned
+ * - Packs 8 bytes into one uint64_t value
+ * - Unlocks flash
+ * - Programs the double word
+ * - Locks flash again
+ * - Reads flash back to verify the write
+ *
+ * @return
+ * 1U = success
+ * 0U = failure
+ */
+static uint8_t flush_flash_buffer(void)
+{
+  HAL_StatusTypeDef status;
+  uint64_t double_word = 0U;
+  uint8_t i;
+
+  /*
+   * Nothing to flush.
+   *
+   * This is not an error.
+   */
+  if (flash_buffer_count == 0U)
+  {
+    return 1U;
+  }
+
+  /*
+   * If this is the final write, the buffer may contain fewer than 8 bytes.
+   *
+   * Flash can only be programmed in 8-byte units, so pad missing bytes
+   * with 0xFF.
+   *
+   * 0xFF is used because erased flash naturally reads as 0xFF.
+   */
+  while (flash_buffer_count < 8U)
+  {
+    flash_buffer[flash_buffer_count] = 0xFFU;
+    flash_buffer_count++;
+  }
+
+  /*
+   * STM32G4 double-word programming requires 8-byte aligned addresses.
+   *
+   * Meaning:
+   * valid:   0x08008000, 0x08008008, 0x08008010
+   * invalid: 0x08008004, 0x08008002
+   */
+  if ((flash_buffer_address % 8U) != 0U)
+  {
+    return 0U;
+  }
+
+  /*
+   * Pack 8 separate bytes into one 64-bit integer.
+   *
+   * STM32 Cortex-M is little-endian.
+   *
+   * Example buffer:
+   *   flash_buffer[0] = 0x11
+   *   flash_buffer[1] = 0x22
+   *   flash_buffer[2] = 0x33
+   *   flash_buffer[3] = 0x44
+   *   flash_buffer[4] = 0x55
+   *   flash_buffer[5] = 0x66
+   *   flash_buffer[6] = 0x77
+   *   flash_buffer[7] = 0x88
+   *
+   * Resulting uint64_t:
+   *   0x8877665544332211
+   *
+   * That may look reversed, but when written to memory on a little-endian
+   * MCU, the bytes appear in flash in the original order:
+   *
+   *   11 22 33 44 55 66 77 88
+   */
+  for (i = 0U; i < 8U; i++)
+  {
+    /*
+     * (uint64_t)flash_buffer[i]
+     * Cast byte to 64-bit before shifting.
+     *
+     * << (8U * i)
+     * Move byte into its correct position inside the 64-bit word.
+     *
+     * |=
+     * OR it into double_word while preserving previous bytes.
+     */
+    double_word |= ((uint64_t)flash_buffer[i] << (8U * i));
+  }
+
+  /*
+   * Unlock flash before programming.
+   */
+  HAL_FLASH_Unlock();
+
+  /*
+   * Program one 64-bit double word into flash.
+   */
+  status = HAL_FLASH_Program(
+      FLASH_TYPEPROGRAM_DOUBLEWORD,
+      flash_buffer_address,
+      double_word
+  );
+
+  /*
+   * Lock flash again immediately after programming.
+   */
+  HAL_FLASH_Lock();
+
+  if (status != HAL_OK)
+  {
+    return 0U;
+  }
+
+  /*
+   * Read-back verification.
+   *
+   * *(volatile uint64_t *)flash_buffer_address means:
+   *
+   * "Treat flash_buffer_address as a pointer to a 64-bit value,
+   *  then read the 64-bit value stored at that address."
+   *
+   * volatile tells the compiler:
+   * "Really read memory here. Do not optimize this away."
+   */
+  if (*(volatile uint64_t *)flash_buffer_address != double_word)
+  {
+    return 0U;
+  }
+
+  /*
+   * Clear buffer state so the next incoming bytes start a new flash word.
+   */
+  flash_buffer_count = 0U;
+  flash_buffer_address = 0U;
+
+  return 1U;
 }
 
 /**
@@ -292,9 +710,14 @@ static void bootloader_handle_start(ace_command_frame_t *frame)
   uint8_t payload[5] = {0};
 
   /*
-   * For now:
-   * payload[0..3] from host = firmware size, little-endian
-   * payload[4] reserved
+   * BOOT_START payload layout:
+   *
+   * payload[0] = reserved
+   * payload[1] = firmware size byte 0, LSB
+   * payload[2] = firmware size byte 1
+   * payload[3] = firmware size byte 2
+   * payload[4] = firmware size byte 3, MSB
+   * payload[5] = reserved
    */
   boot_expected_size =
       ((uint32_t)frame->payload[1]) |
@@ -338,6 +761,8 @@ static void bootloader_handle_start(ace_command_frame_t *frame)
   boot_write_address = RANGER_APP_START_ADDR;
   boot_expected_sequence = 0;
   boot_session_active = 1;
+  flash_buffer_count = 0U;
+  flash_buffer_address = RANGER_APP_START_ADDR;
 
   boot_start_ms = HAL_GetTick();
 
@@ -572,12 +997,6 @@ static void bootloader_handle_end(ace_command_frame_t *frame)
   }
 
   /*
-   * No more BOOT_DATA frames should be accepted after this point,
-   * unless the host starts a new session using BOOT_START.
-   */
-  boot_session_active = 0U;
-
-  /*
    * Check that the number of received firmware bytes matches the size
    * announced during BOOT_START.
    */
@@ -601,6 +1020,25 @@ static void bootloader_handle_end(ace_command_frame_t *frame)
   }
 
   /*
+   * write the final 8-byte flash buffer
+   */
+
+  if (!flush_flash_buffer())
+  {
+    payload[0] = ACE_STATE_FAULT;
+
+    ranger_can_send_response(
+        ACE_CMD_BOOT_END,
+        frame->parameter_id,
+        ACE_STATUS_DATA_FOLLOWS,
+        payload,
+        5
+    );
+    return;
+  }
+
+
+  /*
    * Check that the application vector table looks valid.
    *
    * This checks:
@@ -620,6 +1058,12 @@ static void bootloader_handle_end(ace_command_frame_t *frame)
     );
     return;
   }
+
+  /*
+   * No more BOOT_DATA frames should be accepted after this point,
+   * unless the host starts a new session using BOOT_START.
+   */
+  boot_session_active = 0U;
 
   /*
    * Success response.

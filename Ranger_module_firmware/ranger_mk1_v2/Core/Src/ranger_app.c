@@ -207,49 +207,52 @@ static void ranger_app_handle_read(const ace_command_frame_t *frame)
 
   switch (frame->parameter_id)
   {
-    case RANGER_PARAM_LED_PA1:
-      payload[0] = led_pa1_state;
+  	case ACE_CMD_RESET:
+  			ranger_reset();
 
-      ranger_can_send_response(ACE_CMD_READ,
-                               RANGER_PARAM_LED_PA1,
-                               ACE_STATUS_DATA_FOLLOWS,
-                               payload,
-                               1U);
-      break;
+  			break;
+
+
+    case RANGER_PARAM_LED_PA1:
+    		payload[0] = led_pa1_state;
+
+    		ranger_can_send_response(ACE_CMD_READ,
+                               	 	 RANGER_PARAM_LED_PA1,
+									 ACE_STATUS_DATA_FOLLOWS,
+									 payload,
+									 5);
+    		break;
 
     case RANGER_PARAM_VOLTAGE:
-      {
-        uint16_t voltage_mv = 15500U; /* TODO: replace with INA229 measurement */
+        	uint16_t voltage_mv = 15500U; /* TODO: replace with INA229 measurement */
+        	payload[0] = (uint8_t)(voltage_mv & 0xFFU);
+        	payload[1] = (uint8_t)((voltage_mv >> 8) & 0xFFU);
 
-        payload[0] = (uint8_t)(voltage_mv & 0xFFU);
-        payload[1] = (uint8_t)((voltage_mv >> 8) & 0xFFU);
-
-        ranger_can_send_response(ACE_CMD_READ,
-                                 RANGER_PARAM_VOLTAGE,
-                                 ACE_STATUS_DATA_FOLLOWS,
-                                 payload,
-                                 2U);
-      }
-      break;
+        	ranger_can_send_response(ACE_CMD_READ,
+        							 RANGER_PARAM_VOLTAGE,
+									 ACE_STATUS_DATA_FOLLOWS,
+									 payload,
+									 5);
+        	break;
 
     case RANGER_PARAM_NODE_ID:
-      payload[0] = ranger_can_get_node_id();
+    		payload[0] = ranger_can_get_node_id();
 
-      ranger_can_send_response(ACE_CMD_READ,
-                               RANGER_PARAM_NODE_ID,
-                               ACE_STATUS_DATA_FOLLOWS,
-                               payload,
-                               1U);
-      break;
+    		ranger_can_send_response(ACE_CMD_READ,
+                               	 	 RANGER_PARAM_NODE_ID,
+									 ACE_STATUS_DATA_FOLLOWS,
+									 payload,
+									 5);
+    		break;
 
     default:
-      /* Unknown parameter */
-      ranger_can_send_response(ACE_CMD_READ,
-                               frame->parameter_id,
-							   ACE_STATUS_UNKNOWN_PARAM,
-                               NULL,
-                               0U);
-      break;
+    		/* Unknown parameter */
+    		ranger_can_send_response(ACE_CMD_READ,
+                               	   	 frame->parameter_id,
+									 ACE_STATUS_UNKNOWN_PARAM,
+									 NULL,
+									 0U);
+    		break;
   }
 }
 

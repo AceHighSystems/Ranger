@@ -20,6 +20,7 @@
  */
 #include "ranger_can.h"
 #include "ace_protocol.h"
+#include "main.h"
 #include <string.h>
 
 /* =========================
@@ -86,6 +87,11 @@ static uint32_t ranger_can_get_response_id(void)
 static uint32_t ranger_can_get_heartbeat_id(void)
 {
   return ACE_CANID_HEARTBEAT_BASE + ranger_node_id;
+}
+
+void ranger_reset(void)
+{
+  NVIC_SystemReset();
 }
 
 /**

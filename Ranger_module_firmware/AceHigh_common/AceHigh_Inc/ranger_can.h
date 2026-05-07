@@ -138,11 +138,16 @@ void ranger_can_request_node_id_change(uint8_t node_id);
  * - If change request is pending
  * - Calls the ranger_can_set_node_id function setting the new filter
  * - Clears the pending request if new filter was implemented
- *
  */
 void ranger_can_process_pending_node_id_change(void);
 
-
+/**
+ * @brief Reset the Ranger MCU
+ *
+ * NOTE:
+ * - Takes void and returns void - reset function to be used across CAN and applications
+ */
+void ranger_reset(void);
 
 #endif /* INC_RANGER_CAN_H_ */
 

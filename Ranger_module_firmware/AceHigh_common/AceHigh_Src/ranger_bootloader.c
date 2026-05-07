@@ -93,18 +93,15 @@ void ranger_bootloader_task(void)
     bootloader_handle_frame(&can_frame);
   }
 
-  if (!boot_session_active)
+  // Jump to application if the timeout is reached and application valid - timeout to be lowered if testing shows applicable
+  if ((now - boot_start_ms) > RANGER_BOOT_TIMEOUT_MS)
   {
-    if ((now - boot_start_ms) > RANGER_BOOT_TIMEOUT_MS)
-    {
-      if (app_is_valid())
+	  if (app_is_valid())
       {
         jump_to_app();
       }
-    }
-  }
+   }
 }
-
 
 static uint8_t app_is_valid(void)
 {
@@ -587,6 +584,14 @@ void bootloader_handle_frame(ace_command_frame_t *frame)
 {
   switch (frame->command_id)
   {
+
+	case ACE_CMD_RESET:
+		ranger_reset();
+
+		break;
+
+
+
     case ACE_CMD_BOOT_PING:
     	if(frame->parameter_id == ACE_PARAM_BOOT) // check parameter before deciding that this is a bootloader action
     	{
@@ -672,13 +677,10 @@ void bootloader_handle_frame(ace_command_frame_t *frame)
  */
 static void bootloader_handle_ping(ace_command_frame_t *frame)
 {
-  uint8_t payload[5];
+  uint8_t payload[5] = {0x00};
 
-  payload[0] = ACE_STATE_BOOTLOADER;
   payload[1] = ACE_PROTOCOL_VERSION;
   payload[2] = RANGER_BOOTLOADER_VERSION;
-  payload[3] = 0x00;
-  payload[4] = 0x00;
 
   /* Keep bootloader alive when pinged */
   boot_start_ms = HAL_GetTick();
@@ -725,11 +727,12 @@ static void bootloader_handle_start(ace_command_frame_t *frame)
       ((uint32_t)frame->payload[3] << 16) |
       ((uint32_t)frame->payload[4] << 24);
 
+
+  // Check new firmware size exit with descriptive response if check fails
   if ((boot_expected_size == 0U) ||
       ((RANGER_APP_START_ADDR + boot_expected_size) > RANGER_FLASH_END_ADDR))
   {
-	payload[0] = ACE_STATE_FAULT; // if expected size is zero or larger than available flash
-	  	// specific macro to be added
+	payload[0] = ACE_STATE_FIRMWARE_SIZE_FAULT;
 
     ranger_can_send_response(
         ACE_CMD_BOOT_START,
@@ -743,9 +746,7 @@ static void bootloader_handle_start(ace_command_frame_t *frame)
 
   if (!erase_app_area(boot_expected_size))
   {
-
-	payload[0] = ACE_STATE_FAULT; // fault - erase application did not succeed
-	  	  	// specific macro to be added
+	payload[0] = ACE_STATE_FIRMWARE_ERASE_FAULT; // fault - erase application did not succeed
 
     ranger_can_send_response(
         ACE_CMD_BOOT_START,
@@ -771,7 +772,7 @@ static void bootloader_handle_start(ace_command_frame_t *frame)
    * byte 0: boot session active
    * byte 1-4: accepted firmware size
    */
-  payload[0] =  ACE_STATE_BOOTLOADER;
+  payload[0] = ACE_STATE_BOOTLOADER_ACTIVE;
   payload[1] = (uint8_t)(boot_expected_size & 0xFF);
   payload[2] = (uint8_t)((boot_expected_size >> 8) & 0xFF);
   payload[3] = (uint8_t)((boot_expected_size >> 16) & 0xFF);
@@ -810,6 +811,8 @@ static void bootloader_handle_data(ace_command_frame_t *frame)
   uint8_t bytes_to_write = 4U;
   uint8_t payload[5] = {0};
 
+  boot_start_ms = HAL_GetTick();
+
   /*
    * BOOT_DATA is only valid after BOOT_START has created an active
    * firmware update session.
@@ -817,8 +820,7 @@ static void bootloader_handle_data(ace_command_frame_t *frame)
   if (!boot_session_active)
   {
 
-	payload[0] = ACE_STATE_FAULT; // fault boot session not active
-	// specific macro to be added
+	payload[0] = ACE_STATE_BOOTLOADER_INACTIVE; // fault boot session not active
 
     ranger_can_send_response(
         ACE_CMD_BOOT_DATA,
@@ -859,7 +861,7 @@ static void bootloader_handle_data(ace_command_frame_t *frame)
    */
   if (received_sequence != boot_expected_sequence)
   {
-	payload[0] = ACE_STATE_FAULT; // fault as received sequence not equal to expected
+	payload[0] = ACE_STATE_FIRMWARE_SEQUENCE_FAULT; // fault as received sequence not equal to expected
 	payload[1] = (uint8_t)(boot_expected_sequence & 0xFF); // lsb
 	payload[2] = (uint8_t)((boot_expected_sequence >> 8) & 0xFF); // msb
 	// specific macro to be added
@@ -908,8 +910,7 @@ static void bootloader_handle_data(ace_command_frame_t *frame)
    */
   if (!write_flash(boot_write_address, &frame->payload[2], bytes_to_write))
   {
-	payload[0] = ACE_STATE_FAULT; // fault as received sequence not equal to expected
-	// specific macro to be added
+	payload[0] = ACE_STATE_FIRMWARE_WRITE_FAULT ; // flash write fault
 
     ranger_can_send_response(
         ACE_CMD_BOOT_DATA,
@@ -945,14 +946,20 @@ static void bootloader_handle_data(ace_command_frame_t *frame)
   boot_start_ms = HAL_GetTick();
 
   /*
-   * Acknowledge that this BOOT_DATA frame was accepted and written.
+   * Acknowledge that this BOOT_DATA frame was accepted and written
+   * respond wit bootloader mode is still active
+   * respond with next expected frame sequence number
    */
+  payload[0] = ACE_STATE_BOOTLOADER_ACTIVE;
+  payload[1] = (uint8_t)(boot_expected_sequence & 0xFFU);; // LSB
+  payload[2] = (uint8_t)((boot_expected_sequence >> 8) & 0xFFU); // MSB
+
   ranger_can_send_response(
       ACE_CMD_BOOT_DATA,
       frame->parameter_id,
-      ACE_STATUS_OK,
-      0,
-      0
+      ACE_STATUS_DATA_FOLLOWS,
+      payload,
+      5
   );
 }
 
@@ -984,7 +991,7 @@ static void bootloader_handle_end(ace_command_frame_t *frame)
    */
   if (!boot_session_active)
   {
-    payload[0] = ACE_STATE_FAULT;
+    payload[0] = ACE_STATE_BOOTLOADER_INACTIVE;
 
     ranger_can_send_response(
         ACE_CMD_BOOT_END,
@@ -1002,8 +1009,7 @@ static void bootloader_handle_end(ace_command_frame_t *frame)
    */
   if (boot_received != boot_expected_size)
   {
-    payload[0] = ACE_STATE_FAULT;
-
+    payload[0] = ACE_STATE_FIRMWARE_SIZE_FAULT;
     payload[1] = (uint8_t)(boot_received & 0xFF);
     payload[2] = (uint8_t)((boot_received >> 8) & 0xFF);
     payload[3] = (uint8_t)((boot_received >> 16) & 0xFF);
@@ -1025,7 +1031,7 @@ static void bootloader_handle_end(ace_command_frame_t *frame)
 
   if (!flush_flash_buffer())
   {
-    payload[0] = ACE_STATE_FAULT;
+    payload[0] = ACE_STATE_FIRMWARE_WRITE_FAULT;
 
     ranger_can_send_response(
         ACE_CMD_BOOT_END,

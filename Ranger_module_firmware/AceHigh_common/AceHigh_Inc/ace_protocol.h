@@ -29,7 +29,8 @@
 #define ACE_CMD_BOOT_START          0x41U
 #define ACE_CMD_BOOT_DATA           0x42U
 #define ACE_CMD_BOOT_END            0x43U
-#define ACE_CMD_BOOT_RUN_APP        0x44U
+#define ACE_CMD_RESET               0x44U // resets the MCU jumping to the bootloader
+
 
 /* Following STATUS codes are used for the module response message frames */
 #define ACE_STATUS_OK        		0x10U  //   Last command was handled without errors
@@ -41,11 +42,17 @@
 
 /* Following STATE codes used for the module heartbeat and bootloader response messages
  * Response is present in payload NOT Status field */
-#define ACE_STATE_STANDBY           0x01U
-#define ACE_STATE_FAULT             0x02U
-#define ACE_STATE_EXECUTING         0x03U
-#define ACE_STATE_BOOTLOADER        0x04U
-#define ACE_STATE_APP_VALID			0x05U
+#define ACE_STATE_STANDBY           		0x21U
+#define ACE_STATE_FAULT             		0x22U
+#define ACE_STATE_EXECUTING         		0x23U
+#define ACE_STATE_APP_VALID					0x24U
+#define ACE_STATE_BOOTLOADER_ACTIVE     	0x25U
+#define ACE_STATE_BOOTLOADER_INACTIVE   	0x26U
+#define ACE_STATE_FIRMWARE_SIZE_FAULT   	0x27U
+#define ACE_STATE_FIRMWARE_ERASE_FAULT  	0x28U
+#define ACE_STATE_FIRMWARE_SEQUENCE_FAULT  	0x29U
+#define ACE_STATE_FIRMWARE_WRITE_FAULT  	0x2AU
+
 /* STATE codes END */
 
 /**

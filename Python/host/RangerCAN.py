@@ -3,7 +3,6 @@
 import time
 import threading
 import can
-import argparse
 import queue
 import ace_constants as ACE
 # -----------------------------

@@ -93,14 +93,19 @@ void ranger_bootloader_task(void)
     bootloader_handle_frame(&can_frame);
   }
 
-  // Jump to application if the timeout is reached and application valid - timeout to be lowered if testing shows applicable
-  if ((now - boot_start_ms) > RANGER_BOOT_TIMEOUT_MS)
+  // Jump to application if the boot session is not active
+  // the timeout is reached
+  // and application valid - timeout to be lowered if testing shows applicable
+  if (!boot_session_active)
   {
-	  if (app_is_valid())
+    if ((now - boot_start_ms) > RANGER_BOOT_TIMEOUT_MS)
+    {
+      if (app_is_valid())
       {
         jump_to_app();
       }
-   }
+    }
+  }
 }
 
 static uint8_t app_is_valid(void)
@@ -862,7 +867,6 @@ static void bootloader_handle_data(ace_command_frame_t *frame)
 	payload[0] = ACE_STATE_FIRMWARE_SEQUENCE_FAULT; // fault as received sequence not equal to expected
 	payload[1] = (uint8_t)(boot_expected_sequence & 0xFF); // lsb
 	payload[2] = (uint8_t)((boot_expected_sequence >> 8) & 0xFF); // msb
-	// specific macro to be added
 
     ranger_can_send_response(
         ACE_CMD_BOOT_DATA,

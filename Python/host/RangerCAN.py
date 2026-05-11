@@ -259,7 +259,7 @@ def program_new_firmware(bus: can.Bus):
     if(response_msg.data[2] == ACE.STATUS_OK):
         safe_print("Status ok, resetting")
 
-    time.sleep(5) # Let the module reset before continuing
+    time.sleep(0.2) # Let the module reset before continuing
 
     firmware_path = "/Users/tor/Documents/Ranger/Ranger_module_firmware/ranger_mk1_v2/Debug/ranger_mk1_v2.bin"
 
@@ -280,11 +280,11 @@ def program_new_firmware(bus: can.Bus):
         data=data
     )
     bus.send(can_message)
-    response_msg = wait_for_response(timeout=2.0)
+    response_msg = wait_for_response(timeout=5.0)
 
     # Print received frame with Ace protocol version and module bootloader version before continuing
     
-    # _BOOT_START command
+    # _BOOT_START command - sends command to module, module erases flash and makes ready for new firmware transfer
     data = [ACE_CMD_BOOT_START,
         ACE_PARAM_BOOT,
         0x00,
@@ -300,7 +300,7 @@ def program_new_firmware(bus: can.Bus):
         data=data
     )
     bus.send(can_message)
-    response_msg = wait_for_response(timeout=10.0)
+    response_msg = wait_for_response(timeout=20.0)
 
     if response_msg is None:
         safe_print("BOOT_DATA timeout")
@@ -324,7 +324,7 @@ def program_new_firmware(bus: can.Bus):
 
     BYTES_PER_LINE = 4
     seq_counter = 0
-
+    print("Progress: ", end="", flush=True)
     for offset in range(0, len(firmware), BYTES_PER_LINE):
         fw_array = firmware[offset:offset + BYTES_PER_LINE]
 
@@ -376,9 +376,9 @@ def program_new_firmware(bus: can.Bus):
         seq_counter = seq_counter + 1 # increment sequence counter for next CAN frame 
         
         if (seq_counter % 100 == 0): # a little GUI loading firmware bar
-            print("/", end="")
+            print("/", end="", flush=True)
+            
         
-    print("")
     time.sleep(0.1)
 
     # _BOOT_END

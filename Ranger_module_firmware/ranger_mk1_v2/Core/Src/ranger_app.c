@@ -166,7 +166,7 @@ void ranger_app_tick(void)
     last_blink_ms += 1000U;
     HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_0);
 
-    drv8462_step_once(1);   // one step forward
+    //drv8462_step_once(1);   // one step forward
   }
 }
 

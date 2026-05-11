@@ -257,7 +257,7 @@ def program_new_firmware(bus: can.Bus):
         safe_print("Reset parameter ID not received by module")
 
     if(response_msg.data[2] == ACE.STATUS_OK):
-        safe_print("Status ok, resetting")
+        safe_print("Status ok, resetting module")
 
     time.sleep(0.2) # Let the module reset before continuing
 
@@ -376,8 +376,9 @@ def program_new_firmware(bus: can.Bus):
         seq_counter = seq_counter + 1 # increment sequence counter for next CAN frame 
         
         if (seq_counter % 100 == 0): # a little GUI loading firmware bar
-            print("/", end="", flush=True)
-            
+            safe_print("/", end="", flush=True)
+    
+    safe_print(" ") #newline for following peints    
         
     time.sleep(0.1)
 

@@ -97,7 +97,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	 ranger_app_tick();
+	  ranger_app_tick();
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

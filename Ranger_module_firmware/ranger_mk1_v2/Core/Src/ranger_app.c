@@ -105,7 +105,7 @@ void ranger_app_init(void)
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET); // ENABLE high
   HAL_Delay(2);
 
-  drv8462_init_fullstep_spi_mode();
+  //drv8462_init_fullstep_spi_mode();
   ranger_app_set_led_pa1(0U);
 
   uptime_s = 0U;

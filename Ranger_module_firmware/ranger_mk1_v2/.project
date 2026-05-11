@@ -31,39 +31,29 @@
 	</natures>
 	<linkedResources>
 		<link>
-			<name>AceHigh_Inc</name>
-			<type>2</type>
-			<location>C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Inc</location>
-		</link>
-		<link>
-			<name>AceHigh_Src</name>
-			<type>2</type>
-			<location>C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src</location>
-		</link>
-		<link>
 			<name>Core/Inc/ace_protocol.h</name>
 			<type>1</type>
-			<location>C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Inc/ace_protocol.h</location>
+			<location>/Users/tor/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Inc/ace_protocol.h</location>
 		</link>
 		<link>
 			<name>Core/Inc/ranger_can.h</name>
 			<type>1</type>
-			<location>C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Inc/ranger_can.h</location>
+			<location>/Users/tor/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Inc/ranger_can.h</location>
 		</link>
 		<link>
 			<name>Core/Inc/ranger_param.h</name>
 			<type>1</type>
-			<location>C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Inc/ranger_param.h</location>
+			<location>/Users/tor/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Inc/ranger_param.h</location>
 		</link>
 		<link>
 			<name>Core/Src/ace_protocol.c</name>
 			<type>1</type>
-			<location>C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ace_protocol.c</location>
+			<location>/Users/tor/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ace_protocol.c</location>
 		</link>
 		<link>
 			<name>Core/Src/ranger_can.c</name>
 			<type>1</type>
-			<location>C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_can.c</location>
+			<location>/Users/tor/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ranger_can.c</location>
 		</link>
 	</linkedResources>
 </projectDescription>

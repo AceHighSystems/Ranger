@@ -1,10 +1,10 @@
 /*
- * AceLight_protocol.c
+ * ace_protocol.c
  *
  *  Created on: Apr 27, 2026
  *      Author: Tor Kaufmann Gjerde
  *
- *      The AceLight_protocol.c owns the protocol command decoding
+ *      The ace_protocol.c owns the protocol command decoding
  */
 
 

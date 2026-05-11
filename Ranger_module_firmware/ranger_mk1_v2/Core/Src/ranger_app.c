@@ -22,6 +22,7 @@
 #include "ranger_param.h"
 #include "ace_protocol.h"
 #include "ranger_app.h"
+#include "DRV8462.h"
 
 /* =========================
    Application state
@@ -99,6 +100,12 @@ void ranger_app_init(void)
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
 
+  /* Ensure known GPIO states for stepper driver IC */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_SET); // nSLEEP high
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET); // ENABLE high
+  HAL_Delay(2);
+
+  drv8462_init_fullstep_spi_mode();
   ranger_app_set_led_pa1(0U);
 
   uptime_s = 0U;
@@ -143,9 +150,9 @@ void ranger_app_tick(void)
   }
 
   /* Send heartbeat every 5 seconds */
-  if ((now - last_heartbeat_ms) >= 5000U)
+  if ((now - last_heartbeat_ms) >= 2000U)
   {
-    last_heartbeat_ms += 5000U;
+    last_heartbeat_ms += 2000U;
 
     ranger_can_send_heartbeat(ACE_STATE_STANDBY,
                               0x00U,       /* module temperature placeholder */
@@ -158,6 +165,8 @@ void ranger_app_tick(void)
   {
     last_blink_ms += 1000U;
     HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_0);
+
+    drv8462_step_once(1);   // one step forward
   }
 }
 

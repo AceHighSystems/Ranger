@@ -1,5 +1,5 @@
 /*
- * AceLight_protocol.h
+ *  ace_protocol.h
  *
  *  Created on: Apr 28, 2026
  *      Author: Tor Kaufmann Gjerde

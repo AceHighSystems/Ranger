@@ -89,7 +89,7 @@ int main(void)
   //MX_SPI1_Init();
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
-
+  ranger_can_init();
   /* USER CODE END 2 */
 
   /* Infinite loop */

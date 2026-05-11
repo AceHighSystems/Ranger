@@ -16,6 +16,7 @@
 #define RANGER_PARAM_NODE_ID          0x10U
 #define RANGER_PARAM_STATE            0x12U
 #define RANGER_PARAM_UPTIME           0x13U
+#define RANGER_PARAM_RESET			  0x14U
 
 /* =========================
    Motion (0x40–0x5F)

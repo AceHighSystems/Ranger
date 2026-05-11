@@ -29,7 +29,7 @@
 #define ACE_CMD_BOOT_START          0x41U
 #define ACE_CMD_BOOT_DATA           0x42U
 #define ACE_CMD_BOOT_END            0x43U
-#define ACE_CMD_RESET               0x44U // resets the MCU jumping to the bootloader
+#define ACE_CMD_RESET               0x44U // resets the MCU jumps to the bootloader
 
 
 /* Following STATUS codes are used for the module response message frames */

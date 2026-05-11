@@ -101,8 +101,8 @@ void ranger_app_init(void)
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
 
   /* Ensure known GPIO states for stepper driver IC */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_SET); // nSLEEP high
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET); // ENABLE high
+  //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_SET); // nSLEEP high
+  //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET); // ENABLE high
   HAL_Delay(2);
 
   //drv8462_init_fullstep_spi_mode();

@@ -3,4 +3,4 @@
 ../Core/Src/ranger_app.c:124:6:ranger_app_tick	5
 ../Core/Src/ranger_app.c:171:6:ranger_app_handle_command	4
 ../Core/Src/ranger_app.c:204:13:ranger_app_handle_read	7
-../Core/Src/ranger_app.c:264:13:ranger_app_handle_write	6
+../Core/Src/ranger_app.c:269:13:ranger_app_handle_write	6

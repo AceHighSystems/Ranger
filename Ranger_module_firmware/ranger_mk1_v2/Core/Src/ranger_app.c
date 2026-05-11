@@ -208,8 +208,13 @@ static void ranger_app_handle_read(const ace_command_frame_t *frame)
   switch (frame->parameter_id)
   {
   	case ACE_CMD_RESET:
+			ranger_can_send_response(ACE_CMD_RESET,
+                           	 	 	 0,
+									 ACE_STATUS_OK,
+									 0,
+									 0);
+			HAL_Delay(50);
   			ranger_reset();
-
   			break;
 
 

@@ -5,7 +5,6 @@ import threading
 import can
 import queue
 import ace_constants as ACE
-import ranger_mk1_param as RANGER
 # -----------------------------
 # Ace protocol / Ranger constants
 # -----------------------------
@@ -237,29 +236,6 @@ def print_menu() -> None:
 def program_new_firmware(bus: can.Bus):
 
     safe_print("Starting firmware update...")
-    
-    data = [ACE.CMD_WRITE, RANGER.PARAM_RESET, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00]
-    
-    can_message = can.Message(
-        arbitration_id=ACE_CAN_ID_COMMAND,
-        is_extended_id=False,
-        data=data
-    )
-
-    bus.send(can_message)
-    response_msg = wait_for_response(timeout=2.0)
-   
-    if response_msg is None:
-        safe_print("Module could not be reset")
-        return
-    
-    if(response_msg.data[1] != RANGER.PARAM_RESET):
-        safe_print("Reset parameter ID not received by module")
-
-    if(response_msg.data[2] == ACE.STATUS_OK):
-        safe_print("Status ok, resetting")
-
-    time.sleep(5) # Let the module reset before continuing
 
     firmware_path = "/Users/tor/Documents/Ranger/Ranger_module_firmware/ranger_mk1_v2/Debug/ranger_mk1_v2.bin"
 
@@ -302,22 +278,6 @@ def program_new_firmware(bus: can.Bus):
     bus.send(can_message)
     response_msg = wait_for_response(timeout=10.0)
 
-    if response_msg is None:
-        safe_print("BOOT_DATA timeout")
-        return
-
-    if(response_msg.data[3] != ACE.STATE_BOOTLOADER_ACTIVE):
-        # The bootloader did not return ACE_STATE_BOOTLOADER_ACTIVE so a fault occoured
-        safe_print("BOOT_DATA_START did not complete: Bootloader not active: ", response_msg)
-
-    if(response_msg.data[3] == ACE.STATE_FIRMWARE_ERASE_FAULT):
-        safe_print("Module flash erase fault: ", response_msg)
-        return                     
-
-    if(response_msg.data[3] == ACE.STATE_FIRMWARE_SIZE_FAULT):
-        safe_print("Firmware size miss-match: ", response_msg)
-        return   
-
     # _BOOT_DATA
     # Transfer firmware in chunks of 4 bytes per CAN frame
     # Increment sequence counter and send as two bytes LSB and MSB 
@@ -355,23 +315,22 @@ def program_new_firmware(bus: can.Bus):
         if(response_msg.data[3] != ACE.STATE_BOOTLOADER_ACTIVE):
             # The bootloader did not return ACE_STATE_BOOTLOADER_ACTIVE so a fault occoured
             safe_print("BOOT_DATA did not complete correctly: Bootloader not active: ", response_msg)
-            return
 
-        if(response_msg.data[3] == ACE.STATE_FIRMWARE_SEQUENCE_FAULT):
-            safe_print("CAN frame firmware sequence error: ", response_msg)
-            return
+            if(response_msg.data[3] == ACE.STATE_FIRMWARE_SEQUENCE_FAULT):
+                safe_print("CAN frame firmware sequence error: ", response_msg)
+                return
 
-        if(response_msg.data[3] == ACE.STATE_FIRMWARE_ERASE_FAULT):
-            safe_print("Module flash erase fault: ", response_msg)
-            return            
+            if(response_msg.data[3] == ACE.STATE_FIRMWARE_ERASE_FAULT):
+                safe_print("Module flash erase fault: ", response_msg)
+                return            
 
-        if(response_msg.data[3] == ACE.STATE_FIRMWARE_WRITE_FAULT):
-            safe_print("Module flash write fault: ", response_msg)
-            return            
+            if(response_msg.data[3] == ACE.STATE_FIRMWARE_WRITE_FAULT):
+                safe_print("Module flash write fault: ", response_msg)
+                return            
 
-        if(response_msg.data[3] == ACE.STATE_FIRMWARE_SIZE_FAULT):
-            safe_print("Firmware size miss-match: ", response_msg)
-            return   
+            if(response_msg.data[3] == ACE.STATE_FIRMWARE_SIZE_FAULT):
+                safe_print("Firmware size miss-match: ", response_msg)
+                return   
 
         seq_counter = seq_counter + 1 # increment sequence counter for next CAN frame 
         

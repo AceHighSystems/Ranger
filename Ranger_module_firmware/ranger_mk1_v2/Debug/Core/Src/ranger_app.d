@@ -25,11 +25,13 @@ Core/Src/ranger_app.o: ../Core/Src/ranger_app.c ../Core/Inc/main.h \
  ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_flash_ramfunc.h \
  ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_pwr.h \
  ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_pwr_ex.h \
- /Users/tor/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Inc/ranger_can.h \
- /Users/tor/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Inc/ace_protocol.h \
- /Users/tor/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Inc/ranger_param.h \
- /Users/tor/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Inc/ace_protocol.h \
- ../Core/Inc/ranger_app.h
+ ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_spi.h \
+ ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_spi_ex.h \
+ C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Inc/ranger_can.h \
+ C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Inc/ace_protocol.h \
+ C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Inc/ranger_param.h \
+ C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Inc/ace_protocol.h \
+ ../Core/Inc/ranger_app.h ../Core/Inc/DRV8462.h ../Core/Inc/main.h
 ../Core/Inc/main.h:
 ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal.h:
 ../Core/Inc/stm32g4xx_hal_conf.h:
@@ -57,8 +59,12 @@ Core/Src/ranger_app.o: ../Core/Src/ranger_app.c ../Core/Inc/main.h \
 ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_flash_ramfunc.h:
 ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_pwr.h:
 ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_pwr_ex.h:
-/Users/tor/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Inc/ranger_can.h:
-/Users/tor/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Inc/ace_protocol.h:
-/Users/tor/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Inc/ranger_param.h:
-/Users/tor/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Inc/ace_protocol.h:
+../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_spi.h:
+../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_spi_ex.h:
+C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Inc/ranger_can.h:
+C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Inc/ace_protocol.h:
+C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Inc/ranger_param.h:
+C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Inc/ace_protocol.h:
 ../Core/Inc/ranger_app.h:
+../Core/Inc/DRV8462.h:
+../Core/Inc/main.h:

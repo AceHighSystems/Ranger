@@ -1,0 +1,7 @@
+../Core/Src/DRV8462.c:104:13:drv8462_select	1
+../Core/Src/DRV8462.c:112:13:drv8462_deselect	1
+../Core/Src/DRV8462.c:125:16:drv8462_write_register	1
+../Core/Src/DRV8462.c:162:16:drv8462_read_register	1
+../Core/Src/DRV8462.c:203:6:drv8462_init_fullstep_spi_mode	1
+../Core/Src/DRV8462.c:257:6:drv8462_set_direction	2
+../Core/Src/DRV8462.c:279:6:drv8462_step_once	2

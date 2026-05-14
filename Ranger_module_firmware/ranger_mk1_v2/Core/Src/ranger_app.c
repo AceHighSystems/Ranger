@@ -270,8 +270,8 @@ static void ranger_app_handle_write(const ace_command_frame_t *frame)
   {
 	case RANGER_PARAM_RESET:
 
-		if(frame->payload[0] == 1)
-		{	//Set the reset parameter to the value written
+		//if(frame->payload[0] == 1)
+		//{	//Set the reset parameter to the value written
 
 			ranger_can_send_response(ACE_CMD_WRITE,
 									 RANGER_PARAM_RESET,
@@ -281,7 +281,7 @@ static void ranger_app_handle_write(const ace_command_frame_t *frame)
 			HAL_Delay(50);
 			ranger_reset();
 			break;
-		}
+		//}
 
     case RANGER_PARAM_LED_PA1:
       /* Expect payload[0] = 0 or 1 */

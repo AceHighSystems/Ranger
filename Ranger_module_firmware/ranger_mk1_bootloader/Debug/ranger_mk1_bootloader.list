@@ -620,33 +620,33 @@ void ranger_bootloader_task(void)
  8000506:	4b0c      	ldr	r3, [pc, #48]	@ (8000538 <ranger_bootloader_task+0x70>)
  8000508:	781b      	ldrb	r3, [r3, #0]
  800050a:	2b00      	cmp	r3, #0
- 800050c:	d10d      	bne.n	800052a <ranger_bootloader_task+0x62>
+ 800050c:	d10e      	bne.n	800052c <ranger_bootloader_task+0x64>
   {
     if ((now - boot_start_ms) > RANGER_BOOT_TIMEOUT_MS)
  800050e:	4b0b      	ldr	r3, [pc, #44]	@ (800053c <ranger_bootloader_task+0x74>)
  8000510:	681b      	ldr	r3, [r3, #0]
  8000512:	68fa      	ldr	r2, [r7, #12]
  8000514:	1ad3      	subs	r3, r2, r3
- 8000516:	f5b3 7f7a 	cmp.w	r3, #1000	@ 0x3e8
- 800051a:	d906      	bls.n	800052a <ranger_bootloader_task+0x62>
+ 8000516:	f241 3288 	movw	r2, #5000	@ 0x1388
+ 800051a:	4293      	cmp	r3, r2
+ 800051c:	d906      	bls.n	800052c <ranger_bootloader_task+0x64>
     {
       if (app_is_valid())
- 800051c:	f000 f810 	bl	8000540 <app_is_valid>
- 8000520:	4603      	mov	r3, r0
- 8000522:	2b00      	cmp	r3, #0
- 8000524:	d001      	beq.n	800052a <ranger_bootloader_task+0x62>
+ 800051e:	f000 f80f 	bl	8000540 <app_is_valid>
+ 8000522:	4603      	mov	r3, r0
+ 8000524:	2b00      	cmp	r3, #0
+ 8000526:	d001      	beq.n	800052c <ranger_bootloader_task+0x64>
       {
         jump_to_app();
- 8000526:	f000 f83f 	bl	80005a8 <jump_to_app>
+ 8000528:	f000 f83e 	bl	80005a8 <jump_to_app>
       }
     }
   }
 }
- 800052a:	bf00      	nop
- 800052c:	3710      	adds	r7, #16
- 800052e:	46bd      	mov	sp, r7
- 8000530:	bd80      	pop	{r7, pc}
- 8000532:	bf00      	nop
+ 800052c:	bf00      	nop
+ 800052e:	3710      	adds	r7, #16
+ 8000530:	46bd      	mov	sp, r7
+ 8000532:	bd80      	pop	{r7, pc}
  8000534:	200000b8 	.word	0x200000b8
  8000538:	200000c6 	.word	0x200000c6
  800053c:	200000b4 	.word	0x200000b4

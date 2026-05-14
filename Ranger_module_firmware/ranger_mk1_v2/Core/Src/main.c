@@ -44,7 +44,6 @@ SPI_HandleTypeDef hspi2;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_FDCAN1_Init(void);
-static void MX_SPI1_Init(void);
 static void MX_SPI2_Init(void);
 /* USER CODE BEGIN PFP */
 
@@ -86,7 +85,6 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_FDCAN1_Init();
-  //MX_SPI1_Init();
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
   ranger_can_init();

@@ -34,7 +34,7 @@
 
 /* Following STATUS codes are used for the module response message frames */
 #define ACE_STATUS_OK        		0x10U  //   Last command was handled without errors
-#define ACE_STATUS_QUEUED           0x11U  // 	if no specific USE-CASE please depricate
+#define ACE_STATUS_QUEUED           0x11U  // 	if no specific USE-CASE please depricated
 #define ACE_STATUS_DATA_FOLLOWS     0x12U
 #define ACE_STATUS_UNKNOWN_COMMAND  0x13U
 #define ACE_STATUS_UNKNOWN_PARAM    0x14U
@@ -42,16 +42,16 @@
 
 /* Following STATE codes used for the module heartbeat and bootloader response messages
  * Response is present in payload NOT Status field */
-#define ACE_STATE_STANDBY           		  0x21U
-#define ACE_STATE_FAULT             		  0x22U
-#define ACE_STATE_EXECUTING         		  0x23U
-#define ACE_STATE_APP_VALID					      0x24U
-#define ACE_STATE_BOOTLOADER_ACTIVE     	0x25U
-#define ACE_STATE_BOOTLOADER_INACTIVE   	0x26U
-#define ACE_STATE_FIRMWARE_SIZE_FAULT   	0x27U
-#define ACE_STATE_FIRMWARE_ERASE_FAULT  	0x28U
-#define ACE_STATE_FIRMWARE_SEQUENCE_FAULT 0x29U
-#define ACE_STATE_FIRMWARE_WRITE_FAULT  	0x2AU
+#define ACE_STATE_STANDBY           		  	0x21U
+#define ACE_STATE_FAULT             		  	0x22U
+#define ACE_STATE_EXECUTING         		  	0x23U
+#define ACE_STATE_APP_VALID					   	0x24U
+#define ACE_STATE_BOOTLOADER_ACTIVE     		0x25U
+#define ACE_STATE_BOOTLOADER_INACTIVE   		0x26U
+#define ACE_STATE_FIRMWARE_SIZE_FAULT   		0x27U
+#define ACE_STATE_FIRMWARE_ERASE_FAULT  		0x28U
+#define ACE_STATE_FIRMWARE_SEQUENCE_FAULT 		0x29U
+#define ACE_STATE_FIRMWARE_WRITE_FAULT  		0x2AU
 
 /* STATE codes END */
 

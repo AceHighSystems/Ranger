@@ -18,7 +18,7 @@ ACE_CAN_ID_COMMAND   = 0x600 + NODE_ID   # host -> Ranger
 ACE_CAN_ID_RESPONSE  = 0x580 + NODE_ID   # Ranger -> host
 ACE_CAN_ID_HEARTBEAT = 0x700 + NODE_ID   # Ranger -> host
 
-#Ace protocol specific commands IDs - used in the first byte of the CAN 8-Byte data field / Ace protocol Command ID field
+# Ace protocol specific commands IDs - used in the first byte of the CAN 8-Byte data field / Ace protocol Command ID field
 # currently either read or write are the valid operations in the protocol
 ACE_CMD_READ         = 0x01
 ACE_CMD_WRITE        = 0x02
@@ -236,30 +236,30 @@ def print_menu() -> None:
 
 def program_new_firmware(bus: can.Bus):
 
-    safe_print("Starting firmware update...")
+    # safe_print("Starting firmware update...")
     
-    data = [ACE.CMD_WRITE, RANGER.PARAM_RESET, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00]
+    # data = [ACE.CMD_WRITE, RANGER.PARAM_RESET, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00]
     
-    can_message = can.Message(
-        arbitration_id=ACE_CAN_ID_COMMAND,
-        is_extended_id=False,
-        data=data
-    )
+    # can_message = can.Message(
+    #     arbitration_id=ACE_CAN_ID_COMMAND,
+    #     is_extended_id=False,
+    #     data=data
+    # )
 
-    bus.send(can_message)
-    response_msg = wait_for_response(timeout=2.0)
+    # bus.send(can_message)
+    # response_msg = wait_for_response(timeout=5.0)
    
-    if response_msg is None:
-        safe_print("Module could not be reset")
-        return
+    # if response_msg is None:
+    #     safe_print("Module could not be reset")
+    #     return
     
-    if(response_msg.data[1] != RANGER.PARAM_RESET):
-        safe_print("Reset parameter ID not received by module")
+    # if(response_msg.data[1] != RANGER.PARAM_RESET):
+    #     safe_print("Reset parameter ID not received by module")
 
-    if(response_msg.data[2] == ACE.STATUS_OK):
-        safe_print("Status ok, resetting module")
+    # if(response_msg.data[2] == ACE.STATUS_OK):
+    #     safe_print("Status ok, resetting module")
 
-    time.sleep(0.2) # Let the module reset before continuing
+    # time.sleep(0.2) # Let the module reset before continuing
 
     firmware_path = "/Users/tor/Documents/Ranger/Ranger_module_firmware/ranger_mk1_v2/Debug/ranger_mk1_v2.bin"
 
@@ -300,7 +300,7 @@ def program_new_firmware(bus: can.Bus):
         data=data
     )
     bus.send(can_message)
-    response_msg = wait_for_response(timeout=20.0)
+    response_msg = wait_for_response(timeout=10.0)
 
     if response_msg is None:
         safe_print("BOOT_DATA timeout")

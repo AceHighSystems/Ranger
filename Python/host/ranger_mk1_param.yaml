@@ -2,11 +2,30 @@
 module: Ranger-mk1
 parameter_database_version: 0.1
 
-
 parameters:
+#  System parameters (0x10–0x1F) - System Information
+#  Configuration parameters (0x40–0x5F) - Read / write parameters
+#  Tememetry parameters (0x80–0x9F) - sensor output etc. Read only parameters
+#  Diagnostics and prototype parameters (0xC0–0xDF)
 
+
+# ======================================
+#  System parameters (0x10–0x1F)
+# ======================================
+  node_id:
+    id: 0x30
+    type: u32
+    access: Read / Write
+    unit: milli volt (mV)
+    reboot_required: false
+    persistent: true
+    description: node ID for specific module 
+
+# ======================================
+#  Configuration parameters (0x40–0x5F)
+# ======================================
   drv_enable:
-    id: 0x20
+    id: 0x40
     type: u8
     access: Read / Write
     default: 0
@@ -15,21 +34,33 @@ parameters:
     persistent: false
     description: Enable DRV8462 driver
 
-  microstep_mode:
-    id: 0x21
+  step_mode:
+    id: 0x41
     type: u8
     access: Read / Write
-    default: 16
+    default: 0
     unit: milli volt (mV)
     reboot_required: false
     persistent: false
     description: microstepping, 0 = full-step, 2 = half-step, 
 
-  bus_voltage_mv:
-    id: 0x30
+# ======================================
+#  Telemetry parameters (0x80–0x9F)
+# ======================================
+  voltage:
+    id: 0x80
     type: u32
-    access: Read / Write
+    access: Read
     unit: milli volt (mV)
     reboot_required: false
-    persistent: false
-    description: Enable DRV8462 driver
+    persistent: true
+    description: Input DC bus voltage reading
+
+  current:
+    id: 0x81
+    type: u32
+    access: Read
+    unit: milli ampere (mA)
+    reboot_required: false
+    persistent: true
+    description: input DC bus current reading

@@ -96,16 +96,21 @@ static void ranger_app_set_led_pa1(uint8_t state)
  */
 void ranger_app_init(void)
 {
-  /* Ensure known GPIO state */
+  /* Ensure known GPIO states for LED */
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
 
-  /* Ensure known GPIO states for stepper driver IC */
-  //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, GPIO_PIN_SET); // nSLEEP high
-  //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET); // ENABLE high
+  /* Ensure known GPIO states for stepper stepper driver IC */
+  HAL_GPIO_WritePin(GPIOB, DRV_DIR | DRV_STEP, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, DRV_MODE | DRV_CS, GPIO_PIN_SET); // Mode pin high for driver SPI mode, CS high.
   HAL_Delay(2);
 
-  //drv8462_init_fullstep_spi_mode();
+  HAL_GPIO_WritePin(GPIOB, DRV_SLEEP, GPIO_PIN_SET); // nSLEEP high to disable sleep
+  HAL_Delay(2);
+
+  drv8462_init_fullstep_spi_mode();
+  HAL_GPIO_WritePin(GPIOB, DRV_ENABLE, GPIO_PIN_SET);
+
   ranger_app_set_led_pa1(0U);
 
   uptime_s = 0U;
@@ -161,12 +166,11 @@ void ranger_app_tick(void)
   }
 
   /* Blink LED on PA0 as "alive" indicator */
-  if ((now - last_blink_ms) >= 1000U)
+  if ((now - last_blink_ms) >= 1U)
   {
-    last_blink_ms += 1000U;
+    last_blink_ms += 1U;
     HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_0);
-
-    //drv8462_step_once(1);   // one step forward
+    drv8462_step_once(1);   // one step forward
   }
 }
 
@@ -270,8 +274,8 @@ static void ranger_app_handle_write(const ace_command_frame_t *frame)
   {
 	case RANGER_PARAM_RESET:
 
-		//if(frame->payload[0] == 1)
-		//{	//Set the reset parameter to the value written
+		if(frame->payload[0] == 1)
+		{	//Set the reset parameter to the value written
 
 			ranger_can_send_response(ACE_CMD_WRITE,
 									 RANGER_PARAM_RESET,
@@ -281,7 +285,7 @@ static void ranger_app_handle_write(const ace_command_frame_t *frame)
 			HAL_Delay(50);
 			ranger_reset();
 			break;
-		//}
+		}
 
     case RANGER_PARAM_LED_PA1:
       /* Expect payload[0] = 0 or 1 */

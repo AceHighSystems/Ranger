@@ -122,76 +122,57 @@ static void drv8462_deselect(void)
  * ============================================================
  */
 
-static uint8_t drv8462_write_register(uint8_t register_address, uint8_t register_data)
+static uint8_t drv8462_write_register(uint8_t reg, uint8_t data)
 {
-    uint8_t tx_buffer[2];
-    uint8_t rx_buffer[2];
+    uint16_t tx_word;
+    uint16_t rx_word;
 
-    /*
-     * DRV8462 SPI write frame:
-     *
-     * Byte 0:
-     * bit 7 = 0  normal frame
-     * bit 6 = 0  write operation
-     * bit 5..0 = register address
-     *
-     * Byte 1:
-     * register data
-     */
-    tx_buffer[0] = register_address & 0x3F;
-    tx_buffer[1] = register_data;
+    tx_word = ((uint16_t)(reg & 0x3F) << 8) | data;
 
     drv8462_select();
 
-    HAL_SPI_TransmitReceive(&hspi2,
-                            tx_buffer,
-                            rx_buffer,
-                            2,
-                            HAL_MAX_DELAY);
+    HAL_StatusTypeDef status =
+        HAL_SPI_TransmitReceive(&hspi2,
+                                (uint8_t*)&tx_word,
+                                (uint8_t*)&rx_word,
+                                1,
+                                10);
 
     drv8462_deselect();
 
-    /*
-     * During every SPI transaction, the DRV8462 returns a status byte.
-     * This can later be decoded for fault checking.
-     */
-    return rx_buffer[0];
+    if (status != HAL_OK)
+    {
+        return 0xFF;
+    }
+
+    return (uint8_t)(rx_word >> 8);
 }
 
 
-static uint8_t drv8462_read_register(uint8_t register_address)
+static uint8_t drv8462_read_register(uint8_t reg)
 {
-    uint8_t tx_buffer[2];
-    uint8_t rx_buffer[2];
+    uint16_t tx_word;
+    uint16_t rx_word;
 
-    /*
-     * DRV8462 SPI read frame:
-     *
-     * Byte 0:
-     * bit 7 = 0  normal frame
-     * bit 6 = 1  read operation
-     * bit 5..0 = register address
-     *
-     * Byte 1:
-     * dummy byte
-     */
-    tx_buffer[0] = 0x40 | (register_address & 0x3F);
-    tx_buffer[1] = 0x00;
+    tx_word = ((uint16_t)(0x40 | (reg & 0x3F)) << 8);
 
     drv8462_select();
 
-    HAL_SPI_TransmitReceive(&hspi2,
-                            tx_buffer,
-                            rx_buffer,
-                            2,
-                            HAL_MAX_DELAY);
+    HAL_StatusTypeDef status =
+        HAL_SPI_TransmitReceive(&hspi2,
+                                (uint8_t*)&tx_word,
+                                (uint8_t*)&rx_word,
+                                1,
+                                10);
 
     drv8462_deselect();
 
-    /*
-     * For a register read, the returned register value is in byte 1.
-     */
-    return rx_buffer[1];
+    if (status != HAL_OK)
+    {
+        return 0xFF;
+    }
+
+    return (uint8_t)(rx_word & 0xFF);
 }
 
 
@@ -221,6 +202,13 @@ void drv8462_init_fullstep_spi_mode(void)
     drv8462_write_register(DRV8462_REG_CTRL3, 0xB8);
 
     /*
+     * Internal VREF.
+     *
+     */
+    drv8462_write_register(0x10, 0x12);
+    drv8462_write_register(0x0E, 0x0A); // low torque/current for bring-up
+
+    /*
      * Configure CTRL2:
      *
      * SPI_DIR  = 1, direction controlled over SPI
@@ -231,7 +219,7 @@ void drv8462_init_fullstep_spi_mode(void)
 
     ctrl2_value |= DRV8462_CTRL2_SPI_DIR;
     ctrl2_value |= DRV8462_CTRL2_SPI_STEP;
-    ctrl2_value |= DRV8462_FULLSTEP_100_PERCENT_CURRENT;
+    ctrl2_value |= 0x0A; // micro-step
 
     drv8462_write_register(DRV8462_REG_CTRL2, ctrl2_value);
 
@@ -296,4 +284,30 @@ void drv8462_step_once(uint8_t direction_is_forward)
     ctrl2_value |= DRV8462_CTRL2_STEP;
 
     drv8462_write_register(DRV8462_REG_CTRL2, ctrl2_value);
+}
+
+/* ============================================================
+ * Single-step command over HW interface
+ * ============================================================
+ */
+/* DRV8462:
+ *  PB12 = CS (M0), PB13 = SLCK (M1), PB14 = MISO (Decay1), PB15 = MOSI (Decay2), PB2 = MODE
+ *  PB2 = MODE, PB3 = STEP, PB4 = DIR */
+
+void drv8462_step_once_HW(uint8_t direction)
+{
+	if(direction == 1){
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_SET); // direction 1
+	}
+	if(direction == 0){
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET); // direction 0
+	}
+
+	// Toggle the STEP pin
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
+	HAL_Delay(10);
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
+	HAL_Delay(10);
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
+
 }

@@ -14,5 +14,6 @@
 void drv8462_init_fullstep_spi_mode(void);
 void drv8462_set_direction(uint8_t direction_is_forward);
 void drv8462_step_once(uint8_t direction_is_forward);
+void drv8462_step_once_HW(uint8_t direction);
 
 #endif

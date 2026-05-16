@@ -9,6 +9,7 @@
 #define INC_ACE_PROTOCOL_H_
 
 #include <stdint.h>
+
 #define ACE_NODE_ID_DEFAULT 0x02U
 
 #define ACE_CANID_COMMAND_BASE      0x600U

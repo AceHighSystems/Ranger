@@ -1,6 +1,6 @@
 ../Core/Src/ranger_app.c:73:13:ranger_app_set_led_pa1	2
 ../Core/Src/ranger_app.c:97:6:ranger_app_init	1
-../Core/Src/ranger_app.c:131:6:ranger_app_tick	5
-../Core/Src/ranger_app.c:180:6:ranger_app_handle_command	4
-../Core/Src/ranger_app.c:213:13:ranger_app_handle_read	5
-../Core/Src/ranger_app.c:267:13:ranger_app_handle_write	8
+../Core/Src/ranger_app.c:136:6:ranger_app_tick	5
+../Core/Src/ranger_app.c:184:6:ranger_app_handle_command	4
+../Core/Src/ranger_app.c:217:13:ranger_app_handle_read	5
+../Core/Src/ranger_app.c:271:13:ranger_app_handle_write	9

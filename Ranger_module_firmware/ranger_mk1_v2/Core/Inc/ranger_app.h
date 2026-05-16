@@ -12,6 +12,25 @@
 #define INC_RANGER_APP_H_
 
 #include "ace_protocol.h"
+#include "main.h"
+
+/*
+   *  PB2 = MODE
+   *  PB3 = STEP
+   *  PB4 = DIR
+   *  PB10 = ENABLE
+   *  PB11 = nSLEEP
+   *  PB12 = CS (M0)
+   *  PB13 = SLCK (M1), PB14 = MISO (Decay1), PB15 = MOSI (Decay2) Not used as std. GPIOs used by SPI driver
+ */
+
+#define DRV_ENABLE 		GPIO_PIN_10
+#define DRV_SLEEP		GPIO_PIN_11
+#define DRV_CS			GPIO_PIN_12
+#define DRV_MODE		GPIO_PIN_2
+#define DRV_STEP		GPIO_PIN_3
+#define DRV_DIR			GPIO_PIN_4
+
 
 /**
  * @brief Initialize Ranger application state.

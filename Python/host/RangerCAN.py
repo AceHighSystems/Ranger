@@ -236,30 +236,30 @@ def print_menu() -> None:
 
 def program_new_firmware(bus: can.Bus):
 
-    # safe_print("Starting firmware update...")
+    safe_print("Starting firmware update...")
     
-    # data = [ACE.CMD_WRITE, RANGER.PARAM_RESET, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00]
+    data = [ACE.CMD_WRITE, RANGER.PARAM_RESET, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00]
     
-    # can_message = can.Message(
-    #     arbitration_id=ACE_CAN_ID_COMMAND,
-    #     is_extended_id=False,
-    #     data=data
-    # )
+    can_message = can.Message(
+        arbitration_id=ACE_CAN_ID_COMMAND,
+        is_extended_id=False,
+        data=data
+    )
 
-    # bus.send(can_message)
-    # response_msg = wait_for_response(timeout=5.0)
+    bus.send(can_message)
+    response_msg = wait_for_response(timeout=5.0)
    
-    # if response_msg is None:
-    #     safe_print("Module could not be reset")
-    #     return
+    if response_msg is None:
+        safe_print("Module could not be reset")
+        return
     
-    # if(response_msg.data[1] != RANGER.PARAM_RESET):
-    #     safe_print("Reset parameter ID not received by module")
+    if(response_msg.data[1] != RANGER.PARAM_RESET):
+         safe_print("Reset parameter ID not received by module")
 
-    # if(response_msg.data[2] == ACE.STATUS_OK):
-    #     safe_print("Status ok, resetting module")
+    if(response_msg.data[2] == ACE.STATUS_OK):
+         safe_print("Status ok, resetting module")
 
-    # time.sleep(0.2) # Let the module reset before continuing
+    time.sleep(0.2) # Let the module reset and jump to bootloader mode before continuing
 
     firmware_path = "/Users/tor/Documents/Ranger/Ranger_module_firmware/ranger_mk1_v2/Debug/ranger_mk1_v2.bin"
 

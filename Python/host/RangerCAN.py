@@ -37,9 +37,9 @@ RANGER_PARAM_NODE_ID          = 0x10   # parameter ID for Node variable
 
 # Status codes - specific for Ace protocol
 # Valid status codes for response frame sent after reception of a command frame from host
-ACE_STATUS_OK           = 0x10
-ACE_STATUS_QUEUED       = 0x11
-ACE_STATUS_DATA_FOLLOWS = 0x12
+ACE_STATUS_OK               = 0x10
+ACE_STATUS_QUEUED           = 0x11
+ACE_STATUS_DATA_FOLLOWS     = 0x12
 ACE_STATUS_UNKNOWN_COMMAND  = 0x13
 ACE_STATUS_UNKNOWN_PARAM    = 0x14
 

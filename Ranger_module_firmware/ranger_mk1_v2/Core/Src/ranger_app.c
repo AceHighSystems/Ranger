@@ -184,6 +184,8 @@ void ranger_app_tick(void)
   ranger_app_set_led_pa1(g_param.led1);
   ranger_app_check_reset();
   //ranger_can_request_node_id_change(frame->payload[0]);
+  //ranger_app_read_sens();
+  //ranger_app_read_encoder();
 }
 
 /**

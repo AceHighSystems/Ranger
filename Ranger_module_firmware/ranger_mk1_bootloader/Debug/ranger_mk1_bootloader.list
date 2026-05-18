@@ -627,7 +627,7 @@ void ranger_bootloader_task(void)
  8000510:	681b      	ldr	r3, [r3, #0]
  8000512:	68fa      	ldr	r2, [r7, #12]
  8000514:	1ad3      	subs	r3, r2, r3
- 8000516:	f241 3288 	movw	r2, #5000	@ 0x1388
+ 8000516:	f640 32b8 	movw	r2, #3000	@ 0xbb8
  800051a:	4293      	cmp	r3, r2
  800051c:	d906      	bls.n	800052c <ranger_bootloader_task+0x64>
     {

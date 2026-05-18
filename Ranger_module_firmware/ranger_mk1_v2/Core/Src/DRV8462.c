@@ -219,7 +219,7 @@ void drv8462_init_fullstep_spi_mode(void)
 
     ctrl2_value |= DRV8462_CTRL2_SPI_DIR;
     ctrl2_value |= DRV8462_CTRL2_SPI_STEP;
-    ctrl2_value |= 0x0A; // micro-step
+    ctrl2_value |= 0x0D; // micro-step
 
     drv8462_write_register(DRV8462_REG_CTRL2, ctrl2_value);
 

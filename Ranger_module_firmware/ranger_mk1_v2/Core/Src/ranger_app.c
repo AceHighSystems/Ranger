@@ -53,17 +53,21 @@ static void ranger_app_set_led_pa1(uint8_t state);
 
 /**
  * @brief Handle READ command for a given parameter
- *
  * Builds response payload and sends it via CAN.
  */
 static void ranger_app_handle_read(const ace_command_frame_t *frame);
 
 /**
  * @brief Handle WRITE command for a given parameter
- *
  * Validates input payload and applies changes to hardware/state.
  */
 static void ranger_app_handle_write(const ace_command_frame_t *frame);
+
+/**
+ * @brief Handle WRITE command for a given parameter
+ * Validates input payload and applies changes to hardware/state.
+ */
+static void ranger_app_check_reset(void);
 
 
 /* =========================
@@ -162,22 +166,23 @@ void ranger_app_tick(void)
   {
     last_heartbeat_ms += 5000U;
 
-    ranger_can_send_heartbeat(ACE_STATE_STANDBY,
-                              0x00U,       /* module temperature placeholder */
-                              0x0000U,     /* error flags */
+    /*ranger_can_send_heartbeat(ACE_STATE_STANDBY,
+                              0x00U,
+                              0x0000U,
                               uptime_s);
+                              */
   }
 
   /* Blink LED on PA0 as "alive" indicator */
-  if ((now - last_blink_ms) >= 1U)
+  if ((now - last_blink_ms) >= g_param.step_freq)
   {
-    last_blink_ms += 1U;
+    last_blink_ms += g_param.step_freq;
     HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_0);
-    drv8462_step_once(1);   // one step forward
+    drv8462_step_once(g_param.step_dir);   // one step forward
   }
 
   ranger_app_set_led_pa1(g_param.led1);
-  //ranger_app_check_reset();
+  ranger_app_check_reset();
   //ranger_can_request_node_id_change(frame->payload[0]);
 }
 
@@ -282,4 +287,8 @@ static void ranger_app_handle_write(const ace_command_frame_t *frame)
 }
 
 
-
+static void ranger_app_check_reset(void){
+	if(g_param.reset == 1){
+		NVIC_SystemReset();
+	}
+}

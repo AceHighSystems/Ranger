@@ -55,6 +55,8 @@ bool ranger_param_read(uint8_t id, uint32_t *value);
 
 typedef struct
 {
+	uint8_t  reset;
+
     int32_t  voltage;
     int32_t  current;
     int32_t  temperature;
@@ -62,7 +64,7 @@ typedef struct
     uint8_t  step_enable; // Is it better to map this to HW sleep?
     uint8_t  step_microstep;
     uint8_t	 step_dir;
-	uint8_t	 step_freq;
+	uint32_t step_freq;
 
 	uint8_t  led1;
 

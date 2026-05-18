@@ -5,13 +5,14 @@
 
 ranger_param_t g_param =
 {
+	.reset = 0,
 	.voltage = 12,	  		// update with function
 	.current = 1000,  		// update with function
 	.temperature = 200,
 	.step_enable = 0, 		// Is it better to map this to HW sleep?
 	.step_microstep = 1,
 	.step_dir = 0,
-	.step_freq = 0,
+	.step_freq = 1,
 	.led1 = 1
 };
 
@@ -24,8 +25,9 @@ static const ranger_param_entry_t param_table[] =
     { PARAM_STEP_ENABLE,      &g_param.step_enable,         PARAM_U8,  PARAM_RW },
     { PARAM_STEP_MICRO,       &g_param.step_microstep,      PARAM_U8,  PARAM_RW },
     { PARAM_STEP_DIR,   	  &g_param.step_dir,         	PARAM_U8,  PARAM_RW },
-	{ PARAM_STEP_FREQ,		  &g_param.step_freq,         	PARAM_U8,  PARAM_RW },
-    { PARAM_LED_PA1,		  &g_param.led1,         		PARAM_U8,  PARAM_RW }
+	{ PARAM_STEP_FREQ,		  &g_param.step_freq,         	PARAM_U32, PARAM_RW },
+    { PARAM_LED_PA1,		  &g_param.led1,         		PARAM_U8,  PARAM_RW },
+	{ PARAM_RESET,		      &g_param.reset,         		PARAM_U8,  PARAM_RW }
 };
 
 

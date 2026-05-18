@@ -52,4 +52,5 @@ void ranger_app_tick(void);
  */
 void ranger_app_handle_command(const ace_command_frame_t *frame);
 
+
 #endif /* INC_RANGER_APP_H_ */

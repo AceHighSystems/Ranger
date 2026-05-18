@@ -37,9 +37,9 @@ RANGER_PARAM_NODE_ID          = 0x10   # parameter ID for Node variable
 
 # Status codes - specific for Ace protocol
 # Valid status codes for response frame sent after reception of a command frame from host
-ACE_STATUS_OK           = 0x10
-ACE_STATUS_QUEUED       = 0x11
-ACE_STATUS_DATA_FOLLOWS = 0x12
+ACE_STATUS_OK               = 0x10
+ACE_STATUS_QUEUED           = 0x11
+ACE_STATUS_DATA_FOLLOWS     = 0x12
 ACE_STATUS_UNKNOWN_COMMAND  = 0x13
 ACE_STATUS_UNKNOWN_PARAM    = 0x14
 
@@ -236,30 +236,30 @@ def print_menu() -> None:
 
 def program_new_firmware(bus: can.Bus):
 
-    # safe_print("Starting firmware update...")
+    safe_print("Starting firmware update...")
     
-    # data = [ACE.CMD_WRITE, RANGER.PARAM_RESET, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00]
+    data = [ACE.CMD_WRITE, RANGER.PARAM_RESET, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00]
     
-    # can_message = can.Message(
-    #     arbitration_id=ACE_CAN_ID_COMMAND,
-    #     is_extended_id=False,
-    #     data=data
-    # )
+    can_message = can.Message(
+        arbitration_id=ACE_CAN_ID_COMMAND,
+        is_extended_id=False,
+        data=data
+    )
 
-    # bus.send(can_message)
-    # response_msg = wait_for_response(timeout=5.0)
+    bus.send(can_message)
+    response_msg = wait_for_response(timeout=5.0)
    
-    # if response_msg is None:
-    #     safe_print("Module could not be reset")
-    #     return
+    if response_msg is None:
+        safe_print("Module could not be reset")
+        return
     
-    # if(response_msg.data[1] != RANGER.PARAM_RESET):
-    #     safe_print("Reset parameter ID not received by module")
+    if(response_msg.data[1] != RANGER.PARAM_RESET):
+         safe_print("Reset parameter ID not received by module")
 
-    # if(response_msg.data[2] == ACE.STATUS_OK):
-    #     safe_print("Status ok, resetting module")
+    if(response_msg.data[2] == ACE.STATUS_OK):
+         safe_print("Status ok, resetting module")
 
-    # time.sleep(0.2) # Let the module reset before continuing
+    time.sleep(0.2) # Let the module reset and jump to bootloader mode before continuing
 
     firmware_path = "/Users/tor/Documents/Ranger/Ranger_module_firmware/ranger_mk1_v2/Debug/ranger_mk1_v2.bin"
 

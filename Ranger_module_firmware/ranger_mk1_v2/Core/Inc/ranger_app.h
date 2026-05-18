@@ -11,8 +11,8 @@
 #ifndef INC_RANGER_APP_H_
 #define INC_RANGER_APP_H_
 
-#include "ace_protocol.h"
 #include "main.h"
+#include "ace_protocol.h"
 
 /*
    *  PB2 = MODE

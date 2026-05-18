@@ -110,7 +110,6 @@ void ranger_app_init(void)
 
   drv8462_init_fullstep_spi_mode();
   HAL_GPIO_WritePin(GPIOB, DRV_ENABLE, GPIO_PIN_SET);
-
   ranger_app_set_led_pa1(0U);
 
   uptime_s = 0U;
@@ -120,6 +119,10 @@ void ranger_app_init(void)
   last_heartbeat_ms = now;
   last_blink_ms = now;
 }
+
+  /* Initialize global parameter table g_param */
+
+
 
 /**
  * @brief Application periodic task
@@ -172,6 +175,10 @@ void ranger_app_tick(void)
     HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_0);
     drv8462_step_once(1);   // one step forward
   }
+
+  ranger_app_set_led_pa1(g_param.led1);
+  //ranger_app_check_reset();
+  //ranger_can_request_node_id_change(frame->payload[0]);
 }
 
 /**
@@ -216,50 +223,29 @@ void ranger_app_handle_command(const ace_command_frame_t *frame)
  */
 static void ranger_app_handle_read(const ace_command_frame_t *frame)
 {
-  uint8_t payload[5] = {0};
+  uint8_t payload[4] = {0};
+  uint32_t param_value;
 
-  switch (frame->parameter_id)
+  if(ranger_param_read(frame->parameter_id, &param_value)){
+
+	  payload[0] = (uint8_t)(param_value & 0xFFU);
+	  payload[1] = (uint8_t)((param_value >> 8) & 0xFFU);
+	  payload[2] = (uint8_t)((param_value >> 16) & 0xFFU);
+	  payload[3] = (uint8_t)((param_value >> 24) & 0xFFU);
+
+	  ranger_can_send_response(ACE_CMD_READ,
+	  	  					   frame->parameter_id,
+	  						   ACE_STATUS_DATA_FOLLOWS,
+	  						   payload,
+	  						   4);
+  }
+  else
   {
-    case RANGER_PARAM_LED_PA1:
-    		payload[0] = led_pa1_state;
-
-    		ranger_can_send_response(ACE_CMD_READ,
-                               	 	 RANGER_PARAM_LED_PA1,
-									 ACE_STATUS_DATA_FOLLOWS,
-									 payload,
-									 5);
-    		break;
-
-    case RANGER_PARAM_VOLTAGE:
-        	uint16_t voltage_mv = 15500U; /* TODO: replace with INA229 measurement */
-        	payload[0] = (uint8_t)(voltage_mv & 0xFFU);
-        	payload[1] = (uint8_t)((voltage_mv >> 8) & 0xFFU);
-
-        	ranger_can_send_response(ACE_CMD_READ,
-        							 RANGER_PARAM_VOLTAGE,
-									 ACE_STATUS_DATA_FOLLOWS,
-									 payload,
-									 5);
-        	break;
-
-    case RANGER_PARAM_NODE_ID:
-    		payload[0] = ranger_can_get_node_id();
-
-    		ranger_can_send_response(ACE_CMD_READ,
-                               	 	 RANGER_PARAM_NODE_ID,
-									 ACE_STATUS_DATA_FOLLOWS,
-									 payload,
-									 5);
-    		break;
-
-    default:
-    		/* Unknown parameter */
-    		ranger_can_send_response(ACE_CMD_READ,
-                               	   	 frame->parameter_id,
-									 ACE_STATUS_UNKNOWN_PARAM,
-									 NULL,
-									 0U);
-    		break;
+	  ranger_can_send_response(ACE_CMD_READ,
+                               frame->parameter_id,
+							   ACE_STATUS_UNKNOWN_PARAM,
+							   NULL,
+							   0U);
   }
 }
 
@@ -270,76 +256,30 @@ static void ranger_app_handle_read(const ace_command_frame_t *frame)
  */
 static void ranger_app_handle_write(const ace_command_frame_t *frame)
 {
-  switch (frame->parameter_id)
+  uint32_t param_value;
+
+  param_value = ((uint32_t)frame->payload[0]) |
+		 	 	((uint32_t)frame->payload[1] << 8)|
+				((uint32_t)frame->payload[1] << 16)|
+				((uint32_t)frame->payload[1] << 24);
+
+  if(ranger_param_write(frame->parameter_id, param_value)){
+
+	  ranger_can_send_response(ACE_CMD_WRITE,
+	  	  					   frame->parameter_id,
+							   ACE_STATUS_OK,
+	  						   0,
+	  						   0);
+  }
+  else
   {
-	case RANGER_PARAM_RESET:
-
-		if(frame->payload[0] == 1)
-		{	//Set the reset parameter to the value written
-
-			ranger_can_send_response(ACE_CMD_WRITE,
-									 RANGER_PARAM_RESET,
-									 ACE_STATUS_OK,
-									 0,
-									 0);
-			HAL_Delay(50);
-			ranger_reset();
-			break;
-		}
-
-    case RANGER_PARAM_LED_PA1:
-      /* Expect payload[0] = 0 or 1 */
-      if (frame->payload[0] <= 1U)
-      {
-        ranger_app_set_led_pa1(frame->payload[0]);
-
-        ranger_can_send_response(ACE_CMD_WRITE,
-                                 RANGER_PARAM_LED_PA1,
-                                 ACE_STATUS_OK,
-                                 NULL,
-                                 0U);
-      }
-      else
-      {
-        /* Invalid value */
-        ranger_can_send_response(ACE_CMD_WRITE,
-                                 RANGER_PARAM_LED_PA1,
-								 ACE_STATUS_UNKNOWN_PARAM,
-                                 NULL,
-                                 0U);
-      }
-      break;
-
-
-    case RANGER_PARAM_NODE_ID:
-      if ((frame->payload[0] >= 1U) && (frame->payload[0] <= 127U))
-      {
-        /* Request actual change applied later in main loop */
-        ranger_can_request_node_id_change(frame->payload[0]);
-
-        /* Acknowledge BEFORE the ID changes */
-        ranger_can_send_response(ACE_CMD_WRITE,
-                                 RANGER_PARAM_NODE_ID,
-                                 ACE_STATUS_OK,
-                                 NULL,
-                                 0U);
-      }
-      else
-      {
-        ranger_can_send_response(ACE_CMD_WRITE,
-                                 RANGER_PARAM_NODE_ID,
-								 ACE_STATUS_UNKNOWN_PARAM,
-                                 NULL,
-                                 0U);
-      }
-      break;
-
-    default:
-      ranger_can_send_response(ACE_CMD_WRITE,
+	  ranger_can_send_response(ACE_CMD_WRITE,
                                frame->parameter_id,
 							   ACE_STATUS_UNKNOWN_PARAM,
-                               NULL,
-                               0U);
-      break;
+							   NULL,
+							   0U);
   }
 }
+
+
+

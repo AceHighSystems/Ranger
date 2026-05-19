@@ -50,6 +50,7 @@ PARAMETERS = {
     "led":          RANGER.PARAM_LED_PA1,
     "voltage":      RANGER.PARAM_VOLTAGE,
     "step_freq":    RANGER.PARAM_STEP_FREQ,
+    "current":      RANGER.PARAM_CURRENT,
 }
 
 

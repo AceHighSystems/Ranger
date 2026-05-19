@@ -230,8 +230,8 @@ void drv8462_init_fullstep_spi_mode(void)
  80082c4:	2112      	movs	r1, #18
  80082c6:	2010      	movs	r0, #16
  80082c8:	f7ff ffbe 	bl	8008248 <drv8462_write_register>
-    drv8462_write_register(0x0E, 0x0A); // low torque/current for bring-up
- 80082cc:	210a      	movs	r1, #10
+    drv8462_write_register(0x0E, 0x07); // low torque/current for bring-up
+ 80082cc:	2107      	movs	r1, #7
  80082ce:	200e      	movs	r0, #14
  80082d0:	f7ff ffba 	bl	8008248 <drv8462_write_register>
      *

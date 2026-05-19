@@ -206,7 +206,7 @@ void drv8462_init_fullstep_spi_mode(void)
      *
      */
     drv8462_write_register(0x10, 0x12);
-    drv8462_write_register(0x0E, 0x0A); // low torque/current for bring-up
+    drv8462_write_register(0x0E, 0x07); // low torque/current for bring-up
 
     /*
      * Configure CTRL2:

@@ -251,9 +251,9 @@ void drv8462_init_fullstep_spi_mode(void)
  80082e0:	79fb      	ldrb	r3, [r7, #7]
  80082e2:	f043 0310 	orr.w	r3, r3, #16
  80082e6:	71fb      	strb	r3, [r7, #7]
-    ctrl2_value |= 0x0D; // micro-step
+    ctrl2_value |= 0x0A; // micro-step
  80082e8:	79fb      	ldrb	r3, [r7, #7]
- 80082ea:	f043 030d 	orr.w	r3, r3, #13
+ 80082ea:	f043 030a 	orr.w	r3, r3, #10
  80082ee:	71fb      	strb	r3, [r7, #7]
 
     drv8462_write_register(DRV8462_REG_CTRL2, ctrl2_value);

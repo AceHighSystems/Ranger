@@ -1,3 +1,7 @@
+
+
+<img src="https://github.com/AceHighSystems/Ranger/blob/main/Photos/AceHigh-Logo-Text-Right.png" height="50" /> 
+
 # Ranger Mk1
 Public repository with Firmware, SW tools and guides for the AceHigh Ranger-Mk1 Module.
 
@@ -11,3 +15,5 @@ Building on engineering experience from the space industry, the Ranger targets i
 The Ranger module combines modern stepper motor driver circuits, encoder and sensors together with a robuste CAN interface to form a actuator node solution, built to fit the NEMA 14, 17 and 23 standard stepper motors.
 
 <img src="https://github.com/AceHighSystems/Ranger/blob/main/Photos/Ranger-Mk1.png" height="300" />   <img src="https://github.com/AceHighSystems/Ranger/blob/main/Photos/Ranger-Mk1-Proto-1.png" height="300" />
+
+

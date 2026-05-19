@@ -2,6 +2,7 @@
 Public repository with Firmware, SW tools and guides for the AceHigh Ranger-Mk1 Module.
 
 To learn more about the project email -> tor@ace-high.com
+or visit www.ace-high.com
 
 ## Introduction
 The Ranger module enables smart distributed actuators for applications that require mechanical motion.

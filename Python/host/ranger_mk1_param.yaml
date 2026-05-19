@@ -42,7 +42,17 @@ parameters:
     unit: milli volt (mV)
     reboot_required: false
     persistent: false
-    description: microstepping, 0 = full-step, 2 = half-step, 
+    description: microstepping, 0 = full-step, 2 = half-step up to 256 stepping
+
+  step_dir:
+    id: 0x42
+    type: u8
+    access: Read / Write
+    default: 0
+    unit: Bool
+    reboot_required: false
+    persistent: false
+    description: stepping direction 1 or 0
 
 # ======================================
 #  Telemetry parameters (0x80–0x9F)

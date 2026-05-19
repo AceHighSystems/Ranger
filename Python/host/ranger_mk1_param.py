@@ -15,8 +15,10 @@ PARAM_RESET			= 0x14
 # ===============================
 #  Motion parameters (0x40–0x5F)
 # ===============================
-PARAM_STEP_FREQUENCY    = 0x40
-PARAM_STEP_DIRECTION    = 0x41
+PARAM_STEP_ENABLE       = 0x40
+PARAM_STEP_MICRO        = 0x41
+PARAM_STEP_DIR          = 0x42
+PARAM_STEP_FREQ         = 0x43
 
 # ===============================
 #  Encoder parameters (0x60–0x7F)

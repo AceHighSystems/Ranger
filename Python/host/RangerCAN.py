@@ -43,6 +43,16 @@ ACE_STATUS_DATA_FOLLOWS     = 0x12
 ACE_STATUS_UNKNOWN_COMMAND  = 0x13
 ACE_STATUS_UNKNOWN_PARAM    = 0x14
 
+PARAMETERS = {
+    "reset":        RANGER.PARAM_RESET,
+    "step_dir":     RANGER.PARAM_STEP_DIR,
+    "step_enable":  RANGER.PARAM_STEP_ENABLE,
+    "led":          RANGER.PARAM_LED_PA1,
+    "voltage":      RANGER.PARAM_VOLTAGE,
+    "step_freq":    RANGER.PARAM_STEP_FREQ,
+}
+
+
 rx_queue = queue.Queue()
 
 CHANNEL = "/dev/cu.usbmodem2080317458421"
@@ -129,6 +139,55 @@ def build_write_node_id(new_node_id: int) -> can.Message:
 
 def build_read_node_id() -> can.Message:
     data = [ACE_CMD_READ, RANGER_PARAM_NODE_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+    return can.Message(
+        arbitration_id=ACE_CAN_ID_COMMAND,
+        is_extended_id=False,
+        data=data
+    )
+
+def build_read(parameter_name) -> can.Message:
+    if parameter_name not in PARAMETERS:
+        print(f"Unknown parameter: {parameter_name}")
+        return
+
+    parameter_id = PARAMETERS[parameter_name]
+
+    data = [
+        ACE.CMD_READ,
+        parameter_id,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00
+    ]
+
+    return can.Message(
+        arbitration_id=ACE_CAN_ID_COMMAND,
+        is_extended_id=False,
+        data=data
+    )
+
+
+def build_write(parameter_name, value) -> can.Message:
+    if parameter_name not in PARAMETERS:
+        print(f"Unknown parameter: {parameter_name}")
+        return
+
+    parameter_id = PARAMETERS[parameter_name]
+
+    data = [
+        ACE.CMD_WRITE,
+        parameter_id,
+        value & 0xFF,
+        (value >> 8) & 0xFF,
+        (value >> 16) & 0xFF,
+        (value >> 24) & 0xFF,
+        0x00,
+        0x00
+    ]
+
     return can.Message(
         arbitration_id=ACE_CAN_ID_COMMAND,
         is_extended_id=False,
@@ -227,6 +286,8 @@ def print_menu() -> None:
     safe_print("  5  -> WRITE LED OFF, then READ")
     safe_print("  6  -> READ NODE ID")
     safe_print("  7  -> WRITE NODE ID")
+    safe_print("  8  -> Read parameter test")
+    safe_print("  9  -> Write parameter test")
     safe_print("  b  -> SEND BOOTLOADER PING")
     safe_print("  p  -> Program Firmware")
     safe_print("  m  -> show menu")
@@ -247,19 +308,17 @@ def program_new_firmware(bus: can.Bus):
     )
 
     bus.send(can_message)
-    response_msg = wait_for_response(timeout=5.0)
-   
-    if response_msg is None:
-        safe_print("Module could not be reset")
-        return
+    #response_msg = wait_for_response(timeout=10.0)
+    time.sleep(0.2) # let the module reset before continuing
+    #if response_msg is None:
+     #   safe_print("Module could not be reset")
+      #  return
     
-    if(response_msg.data[1] != RANGER.PARAM_RESET):
-         safe_print("Reset parameter ID not received by module")
+    #if(response_msg.data[1] != RANGER.PARAM_RESET):
+   #      safe_print("Reset parameter ID not received by module")
 
-    if(response_msg.data[2] == ACE.STATUS_OK):
-         safe_print("Status ok, resetting module")
-
-    time.sleep(0.2) # Let the module reset and jump to bootloader mode before continuing
+  #  if(response_msg.data[2] == ACE.STATUS_OK):
+   #      safe_print("Status ok, resetting module")
 
     firmware_path = "/Users/tor/Documents/Ranger/Ranger_module_firmware/ranger_mk1_v2/Debug/ranger_mk1_v2.bin"
 
@@ -420,82 +479,62 @@ def main() -> None:
         t.start()
 
         print_menu()
+        
+        while True:
+            command = input("RANGER> ")
 
-        try:
-            while True:
-                cmd = input("> ").strip().lower()
+            tokens = command.strip().split()
 
-                if cmd == "1":
-                    send_command(bus, build_write_led(0), "WRITE LED ON")
+            if len(tokens) == 0:
+                continue
 
-                elif cmd == "2":
-                    send_command(bus, build_write_led(1), "WRITE LED OFF")
+            # -------------------------
+            # READ
+            # -------------------------
+            if tokens[0] == "read":
 
-                elif cmd == "3":
-                    send_command(bus, build_read_led(), "READ LED STATE")
-
-                elif cmd == "4":
-                    send_command(bus, build_write_led(0), "WRITE LED ON")
-                    time.sleep(0.1)
-                    send_command(bus, build_read_led(), "READ LED STATE")
-
-                elif cmd == "5":
-                    send_command(bus, build_write_led(1), "WRITE LED OFF")
-                    time.sleep(0.1)
-                    send_command(bus, build_read_led(), "READ LED STATE")
-
-                elif cmd == "6":
-                    send_command(bus, build_read_node_id(), "READ NODE ID")
-
-                elif cmd == "7":
-                    try:
-                        new_id = int(input("Enter new Node ID (0-127): ").strip(), 0)
-
-                        if not (0 <= new_id <= 127):
-                            safe_print("Invalid Node ID range")
-                            continue
-
-                        send_command(
-                            bus,
-                            build_write_node_id(new_id),
-                            f"WRITE NODE ID -> {new_id}"
-                        )
-
-                        time.sleep(0.2)
-
-                        NODE_ID = new_id
-                        update_can_ids()
-
-                        safe_print(f"Switched host to new Node ID: {NODE_ID}")
-
-                    except ValueError:
-                        safe_print("Invalid input")
-
-                elif cmd == "p":
-                    program_new_firmware(bus);
-
-                elif cmd == "r":
-                    send_command(bus, build_reset(), "Software reset module")
-
-                elif cmd == "m":
-                    print_menu()
-
-                elif cmd == "q":
-                    safe_print("Quitting...")
-                    break
-
-                elif cmd == "":
+                if len(tokens) != 2:
+                    print("Usage: read <parameter>")
                     continue
 
-                else:
-                    safe_print("Unknown command. Press 'm' for menu.")
+                parameter_name = tokens[1]
 
-        except KeyboardInterrupt:
-            safe_print("\nKeyboard interrupt received. Exiting...")
+                send_command(
+                    bus,
+                    build_read(parameter_name),
+                    f"READ {parameter_name}"
+                )
 
-        running = False
-        time.sleep(0.2)
+            # -------------------------
+            # WRITE
+            # -------------------------
+            elif tokens[0] == "write":
 
+                if len(tokens) != 3:
+                    print("Usage: write <parameter> <value>")
+                    continue
 
+                parameter_name = tokens[1]
+
+                try:
+                    value = int(tokens[2])
+
+                except ValueError:
+                    print("Invalid value")
+                    continue
+
+                send_command(
+                    bus,
+                    build_write(parameter_name, value),
+                    f"WRITE {parameter_name} = {value}"
+                )
+
+            # -------------------------
+            # Program
+            # -------------------------
+            elif tokens[0] == "program":
+                program_new_firmware(bus)
+            
+                
 if __name__ == "__main__":
     main()

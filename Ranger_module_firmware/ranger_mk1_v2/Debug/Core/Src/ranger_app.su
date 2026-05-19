@@ -2,7 +2,7 @@
 ../Core/Src/ranger_app.c:81:13:ranger_app_set_led_pa1	16	static
 ../Core/Src/ranger_app.c:105:6:ranger_app_init	16	static
 ../Core/Src/ranger_app.c:148:6:ranger_app_tick	24	static
-../Core/Src/ranger_app.c:207:6:ranger_app_handle_command	24	static
-../Core/Src/ranger_app.c:240:13:ranger_app_handle_read	32	static
-../Core/Src/ranger_app.c:273:13:ranger_app_handle_write	32	static
-../Core/Src/ranger_app.c:301:13:ranger_app_check_reset	8	static
+../Core/Src/ranger_app.c:208:6:ranger_app_handle_command	24	static
+../Core/Src/ranger_app.c:241:13:ranger_app_handle_read	32	static
+../Core/Src/ranger_app.c:274:13:ranger_app_handle_write	32	static
+../Core/Src/ranger_app.c:302:13:ranger_app_check_reset	8	static

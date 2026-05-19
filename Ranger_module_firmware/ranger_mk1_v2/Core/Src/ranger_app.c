@@ -183,6 +183,7 @@ void ranger_app_tick(void)
   {
     last_blink_ms += g_param.step_freq;
     HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_0);
+    drv8462_step_once(g_param.step_dir);   // one step forward
 
   }
 
@@ -194,7 +195,7 @@ void ranger_app_tick(void)
 
   g_param.current = ina229_read_current_A();
   g_param.voltage = ina229_read_bus_voltage_V();
-  drv8462_step_once(g_param.step_dir);   // one step forward
+
 }
 
 /**

@@ -193,6 +193,7 @@ void ranger_app_tick(void)
   //ranger_app_read_encoder();
 
   g_param.current = ina229_read_current_A();
+  g_param.voltage = ina229_read_bus_voltage_V();
 }
 
 /**

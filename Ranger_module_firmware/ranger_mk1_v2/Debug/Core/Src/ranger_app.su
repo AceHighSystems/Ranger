@@ -1,8 +1,8 @@
 ../Drivers/CMSIS/Include/core_cm4.h:1933:34:__NVIC_SystemReset	4	static,ignoring_inline_asm
-../Core/Src/ranger_app.c:77:13:ranger_app_set_led_pa1	16	static
-../Core/Src/ranger_app.c:101:6:ranger_app_init	16	static
-../Core/Src/ranger_app.c:143:6:ranger_app_tick	24	static
-../Core/Src/ranger_app.c:196:6:ranger_app_handle_command	24	static
-../Core/Src/ranger_app.c:229:13:ranger_app_handle_read	32	static
-../Core/Src/ranger_app.c:262:13:ranger_app_handle_write	32	static
-../Core/Src/ranger_app.c:290:13:ranger_app_check_reset	8	static
+../Core/Src/ranger_app.c:81:13:ranger_app_set_led_pa1	16	static
+../Core/Src/ranger_app.c:105:6:ranger_app_init	16	static
+../Core/Src/ranger_app.c:148:6:ranger_app_tick	24	static
+../Core/Src/ranger_app.c:205:6:ranger_app_handle_command	24	static
+../Core/Src/ranger_app.c:238:13:ranger_app_handle_read	32	static
+../Core/Src/ranger_app.c:271:13:ranger_app_handle_write	32	static
+../Core/Src/ranger_app.c:299:13:ranger_app_check_reset	8	static

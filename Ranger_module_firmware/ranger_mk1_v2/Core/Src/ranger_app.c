@@ -23,6 +23,7 @@
 #include "ace_protocol.h"
 #include "ranger_app.h"
 #include "DRV8462.h"
+#include "INA229.h"
 
 /* =========================
    Application state
@@ -33,6 +34,9 @@ static uint8_t led_pa1_state = 0U;
 
 /* Uptime counter in seconds */
 static uint32_t uptime_s = 0U;
+
+/* sensor measurements */
+int32_t current;
 
 /* Timing references (ms) */
 static uint32_t last_uptime_ms = 0U;
@@ -115,6 +119,7 @@ void ranger_app_init(void)
   drv8462_init_fullstep_spi_mode();
   HAL_GPIO_WritePin(GPIOB, DRV_ENABLE, GPIO_PIN_SET);
   ranger_app_set_led_pa1(0U);
+  ina229_init();
 
   uptime_s = 0U;
 
@@ -186,6 +191,8 @@ void ranger_app_tick(void)
   //ranger_can_request_node_id_change(frame->payload[0]);
   //ranger_app_read_sens();
   //ranger_app_read_encoder();
+
+  g_param.current = ina229_read_current_A();
 }
 
 /**

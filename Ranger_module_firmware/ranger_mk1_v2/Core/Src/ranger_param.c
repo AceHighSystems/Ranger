@@ -182,6 +182,13 @@ bool ranger_param_write(uint8_t id, uint32_t value)
             break;
 
         /*
+         * Parameter is int32_t
+         */
+        case PARAM_I32:
+                *((int32_t*)entry->ptr) = (int32_t)value;
+                break;
+
+        /*
          * Unknown parameter type
          */
         default:
@@ -310,6 +317,13 @@ bool ranger_param_read(uint8_t id, uint32_t *value)
              */
             *value = *((uint32_t*)entry->ptr);
 
+            break;
+
+       /*
+        * Parameter is int32_t
+        */
+        case PARAM_I32:
+            *value = (uint32_t)(*((int32_t*)entry->ptr));
             break;
 
         /*

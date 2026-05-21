@@ -29,6 +29,7 @@ PARAM_ENCODER_POSITION  = 0x60
 #  Tememetry parameters (0x80–0x9F)
 # ===============================
 PARAM_VOLTAGE           = 0x80
+PARAM_CURRENT           = 0x81
 
 # ===============================
 #  Diagnostics and prototype parameters (0xC0–0xDF)

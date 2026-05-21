@@ -20,7 +20,7 @@ ranger_param_t g_param =
 static const ranger_param_entry_t param_table[] =
 {
     { PARAM_VOLTAGE,   		  &g_param.voltage,        		PARAM_U16, PARAM_RO },
-	{ PARAM_CURRENT,  		  &g_param.current,        		PARAM_I32, PARAM_RW },
+	{ PARAM_CURRENT,  		  &g_param.current,        		PARAM_U32, PARAM_RW },
 	{ PARAM_TEMPERATURE,  	  &g_param.temperature,        	PARAM_U16, PARAM_RW },
     { PARAM_STEP_ENABLE,      &g_param.step_enable,         PARAM_U8,  PARAM_RW },
     { PARAM_STEP_MICRO,       &g_param.step_microstep,      PARAM_U8,  PARAM_RW },

@@ -48,15 +48,17 @@ PARAMETERS = {
     "step_dir":     RANGER.PARAM_STEP_DIR,
     "step_enable":  RANGER.PARAM_STEP_ENABLE,
     "led":          RANGER.PARAM_LED_PA1,
-    "voltage":      RANGER.PARAM_VOLTAGE,
     "step_freq":    RANGER.PARAM_STEP_FREQ,
+    "voltage":      RANGER.PARAM_VOLTAGE,
     "current":      RANGER.PARAM_CURRENT,
+    "temp":         RANGER.PARAM_TEMPERATURE,
 }
 
 
 rx_queue = queue.Queue()
 
-CHANNEL = "/dev/cu.usbmodem2080317458421"
+# Mac: use CHANNEL = "/dev/cu.usbmodem2080317458421"
+CHANNEL = "COM7"
 BITRATE = 1000000
 
 print_lock = threading.Lock()
@@ -86,7 +88,20 @@ def update_can_ids() -> None:
     ACE_CAN_ID_HEARTBEAT = 0x700 + NODE_ID
 
 
-# START build custom commands -----------------------------------------------------------------------------------------
+# START build custom commands and helpers -----------------------------------------------------------------------------------------
+def payload_to_i32(payload):
+    value = (
+        payload[0]
+        | (payload[1] << 8)
+        | (payload[2] << 16)
+        | (payload[3] << 24)
+    )
+
+    if value & 0x80000000:
+        value -= 0x100000000
+
+    return value
+
 
 def build_reset() -> can.Message:
     data = [ACE_CMD_WRITE, ACE_PARAM_BOOT, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
@@ -195,6 +210,7 @@ def build_write(parameter_name, value) -> can.Message:
         data=data
     )
 
+
 # END build custom commands --------------------------------------------------------------------------------
 
 def print_message(prefix: str, msg: can.Message) -> None:
@@ -232,6 +248,18 @@ def decode_response(msg: can.Message) -> None:
             safe_print("  Node ID write accepted")
         else:
             safe_print("  Node ID write failed")
+
+    if command_id == ACE_CMD_READ and status_code == ACE_STATUS_DATA_FOLLOWS and parameter_id == RANGER.PARAM_VOLTAGE:
+        voltage = payload_to_i32(payload)/1000
+        safe_print(f"Voltage = {voltage:.3f} V")
+    
+    if command_id == ACE_CMD_READ and status_code == ACE_STATUS_DATA_FOLLOWS and parameter_id == RANGER.PARAM_CURRENT:
+        current = payload_to_i32(payload)/1000
+        safe_print(f"Current = {current:.3f} A")
+
+    if command_id == ACE_CMD_READ and status_code == ACE_STATUS_DATA_FOLLOWS and parameter_id == RANGER.PARAM_TEMPERATURE:
+        temp = payload_to_i32(payload)/1000
+        safe_print(f"Current = {temp:.3f} °C")   
 
 
 def listener_thread(bus: can.Bus) -> None:
@@ -321,8 +349,9 @@ def program_new_firmware(bus: can.Bus):
   #  if(response_msg.data[2] == ACE.STATUS_OK):
    #      safe_print("Status ok, resetting module")
 
-    firmware_path = "/Users/tor/Documents/Ranger/Ranger_module_firmware/ranger_mk1_v2/Debug/ranger_mk1_v2.bin"
+    # Mac use: firmware_path = "/Users/tor/Documents/Ranger/Ranger_module_firmware/ranger_mk1_v2/Debug/ranger_mk1_v2.bin"
 
+    firmware_path = "C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/ranger_mk1_v2/Debug/ranger_mk1_v2.bin"
     with open(firmware_path, "rb") as f:
         firmware = f.read()
 

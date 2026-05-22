@@ -11,8 +11,9 @@
 
 
 void ina229_init(void);
-float ina229_read_bus_voltage_V(void);
-float ina229_read_current_A(void);
+float ina229_read_volt(void);
+float ina229_read_current(void);
+float ina229_read_temp(void);
 
 
 #endif

@@ -30,6 +30,8 @@ PARAM_ENCODER_POSITION  = 0x60
 # ===============================
 PARAM_VOLTAGE           = 0x80
 PARAM_CURRENT           = 0x81
+PARAM_TEMPERATURE       = 0x82
+
 
 # ===============================
 #  Diagnostics and prototype parameters (0xC0–0xDF)

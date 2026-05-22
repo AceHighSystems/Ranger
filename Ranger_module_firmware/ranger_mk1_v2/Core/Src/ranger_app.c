@@ -42,6 +42,7 @@ int32_t current;
 static uint32_t last_uptime_ms = 0U;
 static uint32_t last_heartbeat_ms = 0U;
 static uint32_t last_blink_ms = 0U;
+static uint32_t last_ina_ms = 0;
 
 /* =========================
    Internal helpers
@@ -72,6 +73,7 @@ static void ranger_app_handle_write(const ace_command_frame_t *frame);
  * Validates input payload and applies changes to hardware/state.
  */
 static void ranger_app_check_reset(void);
+static void ranger_app_check_step_enable(void);
 
 
 /* =========================
@@ -181,21 +183,30 @@ void ranger_app_tick(void)
   /* Blink LED on PA0 as "alive" indicator */
   if ((now - last_blink_ms) >= g_param.step_freq)
   {
-    last_blink_ms += g_param.step_freq;
+	if(g_param.step_freq != 0)
+	{
+		drv8462_step_once(g_param.step_dir);   // one step forward
+	}
+
+	last_blink_ms += g_param.step_freq;
     HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_0);
-    drv8462_step_once(g_param.step_dir);   // one step forward
 
   }
 
   ranger_app_set_led_pa1(g_param.led1);
   ranger_app_check_reset();
+  ranger_app_check_step_enable();
   //ranger_can_request_node_id_change(frame->payload[0]);
   //ranger_app_read_sens();
   //ranger_app_read_encoder();
 
-  //g_param.current = (int32_t)(ina229_read_current_A() * 1000.0f);
-  //g_param.voltage = (int32_t)(ina229_read_bus_voltage_V() * 1000.0f);
-
+  if ((now - last_ina_ms) >= 250U)
+  {
+      last_ina_ms = now;
+      g_param.current = (int32_t)(ina229_read_current()* 1000.0f);
+      g_param.voltage = (int32_t)(ina229_read_volt() * 1000.0f);
+      g_param.temperature = (int32_t)ina229_read_temp();
+  }
 }
 
 /**
@@ -299,8 +310,23 @@ static void ranger_app_handle_write(const ace_command_frame_t *frame)
 }
 
 
-static void ranger_app_check_reset(void){
-	if(g_param.reset == 1){
+static void ranger_app_check_reset(void)
+{
+	if(g_param.reset == 1)
+	{
 		NVIC_SystemReset();
+	}
+}
+
+
+static void ranger_app_check_step_enable(void)
+{
+	if(g_param.step_enable == 0)
+	{
+		HAL_GPIO_WritePin(GPIOB, DRV_ENABLE, GPIO_PIN_RESET);
+	}
+	if(g_param.step_enable == 1)
+	{
+		HAL_GPIO_WritePin(GPIOB, DRV_ENABLE, GPIO_PIN_SET);
 	}
 }

@@ -3,12 +3,12 @@
 #include <stddef.h>
 #include "ranger_param.h"
 
+/*
+ * Initialize some important variables
+ */
 ranger_param_t g_param =
 {
 	.reset = 0,
-	.voltage = 10,	  		// update with function
-	.current = 1000,  		// update with function
-	.temperature = 200,
 	.step_enable = 0, 		// Is it better to map this to HW sleep?
 	.step_microstep = 1,
 	.step_dir = 0,
@@ -21,7 +21,7 @@ static const ranger_param_entry_t param_table[] =
 {
     { PARAM_VOLTAGE,   		  &g_param.voltage,        		PARAM_I32, PARAM_RO },
 	{ PARAM_CURRENT,  		  &g_param.current,        		PARAM_I32, PARAM_RO },
-	{ PARAM_TEMPERATURE,  	  &g_param.temperature,        	PARAM_U16, PARAM_RW },
+	{ PARAM_TEMPERATURE,  	  &g_param.temperature,        	PARAM_I32, PARAM_RO },
     { PARAM_STEP_ENABLE,      &g_param.step_enable,         PARAM_U8,  PARAM_RW },
     { PARAM_STEP_MICRO,       &g_param.step_microstep,      PARAM_U8,  PARAM_RW },
     { PARAM_STEP_DIR,   	  &g_param.step_dir,         	PARAM_U8,  PARAM_RW },

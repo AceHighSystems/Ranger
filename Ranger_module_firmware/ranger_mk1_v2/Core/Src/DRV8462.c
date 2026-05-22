@@ -124,18 +124,22 @@ static void drv8462_deselect(void)
 
 static uint8_t drv8462_write_register(uint8_t reg, uint8_t data)
 {
-    uint16_t tx_word;
-    uint16_t rx_word;
+	uint8_t tx[2];
+	uint8_t rx[2];
 
-    tx_word = ((uint16_t)(reg & 0x3F) << 8) | data;
+	tx[0] = (uint8_t)(reg & 0x3F);   // address / command byte
+	tx[1] = data;                    // register data
+
+	rx[0] = 0;
+	rx[1] = 0;
 
     drv8462_select();
 
     HAL_StatusTypeDef status =
         HAL_SPI_TransmitReceive(&hspi2,
-                                (uint8_t*)&tx_word,
-                                (uint8_t*)&rx_word,
-                                1,
+                                tx,
+                                rx,
+                                2,
                                 10);
 
     drv8462_deselect();
@@ -145,24 +149,28 @@ static uint8_t drv8462_write_register(uint8_t reg, uint8_t data)
         return 0xFF;
     }
 
-    return (uint8_t)(rx_word >> 8);
+    return rx[0];
 }
 
 
 static uint8_t drv8462_read_register(uint8_t reg)
 {
-    uint16_t tx_word;
-    uint16_t rx_word;
+	uint8_t tx[2];
+	uint8_t rx[2];
 
-    tx_word = ((uint16_t)(0x40 | (reg & 0x3F)) << 8);
+	tx[0] = (uint8_t)(0x80U | (reg & 0x3F));  // adjust read bit if needed
+	tx[1] = 0x00;
+
+	rx[0] = 0;
+	rx[1] = 0;
 
     drv8462_select();
 
     HAL_StatusTypeDef status =
         HAL_SPI_TransmitReceive(&hspi2,
-                                (uint8_t*)&tx_word,
-                                (uint8_t*)&rx_word,
-                                1,
+                                tx,
+                                rx,
+                                2,
                                 10);
 
     drv8462_deselect();
@@ -172,7 +180,7 @@ static uint8_t drv8462_read_register(uint8_t reg)
         return 0xFF;
     }
 
-    return (uint8_t)(rx_word & 0xFF);
+    return rx[1];
 }
 
 

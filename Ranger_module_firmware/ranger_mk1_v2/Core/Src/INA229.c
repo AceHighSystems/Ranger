@@ -31,7 +31,7 @@ extern SPI_HandleTypeDef hspi2;
  * Example:
  * 10 mOhm shunt, max expected current 10 A.
  */
-#define INA229_SHUNT_RESISTANCE_OHM      0.010f
+#define INA229_SHUNT_RESISTANCE_OHM      0.016f
 #define INA229_MAX_EXPECTED_CURRENT_A    10.0f
 
 /* ============================================================
@@ -45,6 +45,7 @@ extern SPI_HandleTypeDef hspi2;
 #define INA229_REG_VBUS           0x05
 #define INA229_REG_CURRENT        0x07
 #define INA229_REG_DEVICE_ID      0x3F
+#define INA229_REG_DIETEMP        0x06
 
 /* ============================================================
  * Scaling
@@ -60,6 +61,9 @@ extern SPI_HandleTypeDef hspi2;
  * VBUS LSB = 195.3125 uV
  */
 #define INA229_VBUS_LSB_V         0.0001953125f
+
+
+#define INA229_DIETEMP_LSB_mC     7.8125f
 
 /* ============================================================
  * Low-level chip select
@@ -233,7 +237,7 @@ void ina229_init(void)
  * ============================================================
  */
 
-float ina229_read_bus_voltage_V(void)
+float ina229_read_volt(void)
 {
     uint32_t raw = ina229_read_register_24(INA229_REG_VBUS);
 
@@ -251,13 +255,29 @@ float ina229_read_bus_voltage_V(void)
  * ============================================================
  */
 
-float ina229_read_current_A(void)
+float ina229_read_current(void)
 {
-    uint32_t raw_u24 = ina229_read_register_24(INA229_REG_CURRENT);
+    uint32_t raw = ina229_read_register_24(INA229_REG_CURRENT);
 
-    int32_t raw_s24 = ina229_sign_extend_24(raw_u24);
+    raw = raw >> 4;   // CURRENT is bits 23:4
+
+    int32_t raw_s24 = ina229_sign_extend_24(raw);
 
     return (float)raw_s24 * INA229_CURRENT_LSB_A;
+}
+
+/* ============================================================
+ * Read Temperature
+ * ============================================================
+ */
+
+float ina229_read_temp(void)
+{
+    uint16_t raw_u16 = ina229_read_register_16(INA229_REG_DIETEMP);
+
+    int16_t raw_s16 = (int16_t)raw_u16;
+
+    return (float)raw_s16 * INA229_DIETEMP_LSB_mC;;
 }
 
 /* ============================================================

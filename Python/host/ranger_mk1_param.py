@@ -37,3 +37,5 @@ PARAM_TEMPERATURE       = 0x82
 #  Diagnostics and prototype parameters (0xC0–0xDF)
 # ===============================
 PARAM_LED_PA1           = 0xC0
+PARAM_TEST              = 0xC1
+PARAM_FDC1_CH0          = 0xC2

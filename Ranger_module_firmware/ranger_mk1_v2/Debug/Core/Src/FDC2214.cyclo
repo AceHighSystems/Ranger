@@ -1,0 +1,5 @@
+../Core/Src/FDC2214.c:26:6:fdc2214_init	1
+../Core/Src/FDC2214.c:38:6:fdc2214_write_register	1
+../Core/Src/FDC2214.c:50:10:fdc2214_read_register	1
+../Core/Src/FDC2214.c:62:10:fdc2214_read_ch0_raw	1
+../Core/Src/FDC2214.c:76:10:fdc2214_read_device_id	1

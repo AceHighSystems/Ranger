@@ -13,7 +13,8 @@ ranger_param_t g_param =
 	.step_microstep = 1,
 	.step_dir = 0,
 	.step_freq = 1,
-	.led1 = 1
+	.led1 = 1,
+	.test = 2
 };
 
 
@@ -27,7 +28,9 @@ static const ranger_param_entry_t param_table[] =
     { PARAM_STEP_DIR,   	  &g_param.step_dir,         	PARAM_U8,  PARAM_RW },
 	{ PARAM_STEP_FREQ,		  &g_param.step_freq,         	PARAM_U32, PARAM_RW },
     { PARAM_LED_PA1,		  &g_param.led1,         		PARAM_U8,  PARAM_RW },
-	{ PARAM_RESET,		      &g_param.reset,         		PARAM_U8,  PARAM_RW }
+	{ PARAM_RESET,		      &g_param.reset,         		PARAM_U8,  PARAM_RW },
+	{ PARAM_TEST,		      &g_param.test,         		PARAM_U32, PARAM_RW },
+    { PARAM_FDC1_CH0,		  &g_param.fdc1_ch0,            PARAM_U32, PARAM_RW }
 };
 
 

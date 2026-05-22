@@ -24,6 +24,7 @@
 #include "ranger_app.h"
 #include "DRV8462.h"
 #include "INA229.h"
+#include "FDC2214.h"
 
 /* =========================
    Application state
@@ -122,6 +123,7 @@ void ranger_app_init(void)
   HAL_GPIO_WritePin(GPIOB, DRV_ENABLE, GPIO_PIN_SET);
   ranger_app_set_led_pa1(0U);
   ina229_init();
+  fdc2214_init();
 
   uptime_s = 0U;
 
@@ -206,6 +208,8 @@ void ranger_app_tick(void)
       g_param.current = (int32_t)(ina229_read_current()* 1000.0f);
       g_param.voltage = (int32_t)(ina229_read_volt() * 1000.0f);
       g_param.temperature = (int32_t)ina229_read_temp();
+      g_param.test = fdc2214_read_device_id();
+      g_param.fdc1_ch0 = fdc2214_read_ch0_raw();
   }
 }
 

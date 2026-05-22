@@ -52,6 +52,8 @@ PARAMETERS = {
     "voltage":      RANGER.PARAM_VOLTAGE,
     "current":      RANGER.PARAM_CURRENT,
     "temp":         RANGER.PARAM_TEMPERATURE,
+    "test":         RANGER.PARAM_TEST,
+    "ch0":       RANGER.PARAM_FDC1_CH0
 }
 
 
@@ -259,7 +261,11 @@ def decode_response(msg: can.Message) -> None:
 
     if command_id == ACE_CMD_READ and status_code == ACE_STATUS_DATA_FOLLOWS and parameter_id == RANGER.PARAM_TEMPERATURE:
         temp = payload_to_i32(payload)/1000
-        safe_print(f"Current = {temp:.3f} °C")   
+        safe_print(f"Temperature = {temp:.3f} °C")   
+
+    if command_id == ACE_CMD_READ and status_code == ACE_STATUS_DATA_FOLLOWS and parameter_id == RANGER.PARAM_FDC1_CH0:
+        value = (payload[0] | (payload[1] << 8) | (payload[2] << 16) | (payload[3] << 24))
+        safe_print("Raw: ", value)   
 
 
 def listener_thread(bus: can.Bus) -> None:

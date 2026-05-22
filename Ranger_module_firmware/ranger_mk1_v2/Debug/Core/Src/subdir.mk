@@ -6,6 +6,7 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../Core/Src/DRV8462.c \
+../Core/Src/FDC2214.c \
 ../Core/Src/INA229.c \
 C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Src/ace_protocol.c \
 ../Core/Src/main.c \
@@ -20,6 +21,7 @@ C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/AceHigh_common/AceHigh_Sr
 
 OBJS += \
 ./Core/Src/DRV8462.o \
+./Core/Src/FDC2214.o \
 ./Core/Src/INA229.o \
 ./Core/Src/ace_protocol.o \
 ./Core/Src/main.o \
@@ -34,6 +36,7 @@ OBJS += \
 
 C_DEPS += \
 ./Core/Src/DRV8462.d \
+./Core/Src/FDC2214.d \
 ./Core/Src/INA229.d \
 ./Core/Src/ace_protocol.d \
 ./Core/Src/main.d \
@@ -58,7 +61,7 @@ Core/Src/ranger_can.o: C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/Ac
 clean: clean-Core-2f-Src
 
 clean-Core-2f-Src:
-	-$(RM) ./Core/Src/DRV8462.cyclo ./Core/Src/DRV8462.d ./Core/Src/DRV8462.o ./Core/Src/DRV8462.su ./Core/Src/INA229.cyclo ./Core/Src/INA229.d ./Core/Src/INA229.o ./Core/Src/INA229.su ./Core/Src/ace_protocol.cyclo ./Core/Src/ace_protocol.d ./Core/Src/ace_protocol.o ./Core/Src/ace_protocol.su ./Core/Src/main.cyclo ./Core/Src/main.d ./Core/Src/main.o ./Core/Src/main.su ./Core/Src/ranger_app.cyclo ./Core/Src/ranger_app.d ./Core/Src/ranger_app.o ./Core/Src/ranger_app.su ./Core/Src/ranger_can.cyclo ./Core/Src/ranger_can.d ./Core/Src/ranger_can.o ./Core/Src/ranger_can.su ./Core/Src/ranger_param.cyclo ./Core/Src/ranger_param.d ./Core/Src/ranger_param.o ./Core/Src/ranger_param.su ./Core/Src/stm32g4xx_hal_msp.cyclo ./Core/Src/stm32g4xx_hal_msp.d ./Core/Src/stm32g4xx_hal_msp.o ./Core/Src/stm32g4xx_hal_msp.su ./Core/Src/stm32g4xx_it.cyclo ./Core/Src/stm32g4xx_it.d ./Core/Src/stm32g4xx_it.o ./Core/Src/stm32g4xx_it.su ./Core/Src/syscalls.cyclo ./Core/Src/syscalls.d ./Core/Src/syscalls.o ./Core/Src/syscalls.su ./Core/Src/sysmem.cyclo ./Core/Src/sysmem.d ./Core/Src/sysmem.o ./Core/Src/sysmem.su ./Core/Src/system_stm32g4xx.cyclo ./Core/Src/system_stm32g4xx.d ./Core/Src/system_stm32g4xx.o ./Core/Src/system_stm32g4xx.su
+	-$(RM) ./Core/Src/DRV8462.cyclo ./Core/Src/DRV8462.d ./Core/Src/DRV8462.o ./Core/Src/DRV8462.su ./Core/Src/FDC2214.cyclo ./Core/Src/FDC2214.d ./Core/Src/FDC2214.o ./Core/Src/FDC2214.su ./Core/Src/INA229.cyclo ./Core/Src/INA229.d ./Core/Src/INA229.o ./Core/Src/INA229.su ./Core/Src/ace_protocol.cyclo ./Core/Src/ace_protocol.d ./Core/Src/ace_protocol.o ./Core/Src/ace_protocol.su ./Core/Src/main.cyclo ./Core/Src/main.d ./Core/Src/main.o ./Core/Src/main.su ./Core/Src/ranger_app.cyclo ./Core/Src/ranger_app.d ./Core/Src/ranger_app.o ./Core/Src/ranger_app.su ./Core/Src/ranger_can.cyclo ./Core/Src/ranger_can.d ./Core/Src/ranger_can.o ./Core/Src/ranger_can.su ./Core/Src/ranger_param.cyclo ./Core/Src/ranger_param.d ./Core/Src/ranger_param.o ./Core/Src/ranger_param.su ./Core/Src/stm32g4xx_hal_msp.cyclo ./Core/Src/stm32g4xx_hal_msp.d ./Core/Src/stm32g4xx_hal_msp.o ./Core/Src/stm32g4xx_hal_msp.su ./Core/Src/stm32g4xx_it.cyclo ./Core/Src/stm32g4xx_it.d ./Core/Src/stm32g4xx_it.o ./Core/Src/stm32g4xx_it.su ./Core/Src/syscalls.cyclo ./Core/Src/syscalls.d ./Core/Src/syscalls.o ./Core/Src/syscalls.su ./Core/Src/sysmem.cyclo ./Core/Src/sysmem.d ./Core/Src/sysmem.o ./Core/Src/sysmem.su ./Core/Src/system_stm32g4xx.cyclo ./Core/Src/system_stm32g4xx.d ./Core/Src/system_stm32g4xx.o ./Core/Src/system_stm32g4xx.su
 
 .PHONY: clean-Core-2f-Src
 

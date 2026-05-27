@@ -48,6 +48,7 @@ static uint32_t last_ina_ms = 0;
 /* =========================
    Internal helpers
    ========================= */
+extern TIM_HandleTypeDef htim2;
 
 /**
  * @brief Set LED on PA1 and update internal state
@@ -70,11 +71,11 @@ static void ranger_app_handle_read(const ace_command_frame_t *frame);
 static void ranger_app_handle_write(const ace_command_frame_t *frame);
 
 /**
- * @brief Handle WRITE command for a given parameter
- * Validates input payload and applies changes to hardware/state.
+ * @brief local application functions
  */
 static void ranger_app_check_reset(void);
 static void ranger_app_check_step_enable(void);
+void ranger_set_step_frequency(uint32_t freq_hz);
 
 
 /* =========================
@@ -112,18 +113,21 @@ void ranger_app_init(void)
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
 
   /* Ensure known GPIO states for stepper stepper driver IC */
-  HAL_GPIO_WritePin(GPIOB, DRV_DIR | DRV_STEP, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(GPIOB, DRV_MODE | DRV_CS, GPIO_PIN_SET); // Mode pin high for driver SPI mode, CS high.
+  HAL_GPIO_WritePin(GPIOB, DRV_DIR, GPIO_PIN_RESET); // DRV8462 Set direction pin
+  HAL_GPIO_WritePin(GPIOB, DRV_MODE | DRV_CS, GPIO_PIN_SET); // DRV8462 Mode pin high for SPI mode
   HAL_Delay(2);
-
-  HAL_GPIO_WritePin(GPIOB, DRV_SLEEP, GPIO_PIN_SET); // nSLEEP high to disable sleep
+  HAL_GPIO_WritePin(GPIOB, DRV_SLEEP, GPIO_PIN_SET); // DRV8462 nSLEEP high to disable sleep
   HAL_Delay(2);
 
   drv8462_init_fullstep_spi_mode();
-  HAL_GPIO_WritePin(GPIOB, DRV_ENABLE, GPIO_PIN_SET);
   ranger_app_set_led_pa1(0U);
+
   ina229_init();
-  fdc2214_init();
+  uint8_t check = fdc2214_init();
+
+  if(check != 1){
+	  g_param.error_flag = check;
+  }
 
   uptime_s = 0U;
 
@@ -179,38 +183,43 @@ void ranger_app_tick(void)
                               0x00U,
                               0x0000U,
                               uptime_s);
-                              */
+	*/
   }
 
   /* Blink LED on PA0 as "alive" indicator */
-  if ((now - last_blink_ms) >= g_param.step_freq)
+  if ((now - last_blink_ms) >= 250U)
   {
-	if(g_param.step_freq != 0)
-	{
-		drv8462_step_once(g_param.step_dir);   // one step forward
-	}
-
-	last_blink_ms += g_param.step_freq;
+	last_blink_ms += 250U;
     HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_0);
-
   }
 
-  ranger_app_set_led_pa1(g_param.led1);
-  ranger_app_check_reset();
-  ranger_app_check_step_enable();
   //ranger_can_request_node_id_change(frame->payload[0]);
-  //ranger_app_read_sens();
-  //ranger_app_read_encoder();
 
-  if ((now - last_ina_ms) >= 250U)
+  /* Tasks scheduled to run every x miliseconds */
+  if ((now - last_ina_ms) >=1U)
   {
       last_ina_ms = now;
-      g_param.current = (int32_t)(ina229_read_current()* 1000.0f);
-      g_param.voltage = (int32_t)(ina229_read_volt() * 1000.0f);
-      g_param.temperature = (int32_t)ina229_read_temp();
-      g_param.test = fdc2214_read_device_id();
-      g_param.fdc1_ch0 = fdc2214_read_ch0_raw();
+
+      /* Read sensor values */
+      //g_param.current = (int32_t)(ina229_read_current()* 1000.0f);
+      //g_param.voltage = (int32_t)(ina229_read_volt() * 1000.0f);
+      //g_param.temperature = (int32_t)ina229_read_temp();
+
+      //param.test = fdc2214_read_device_id();
+
+      /* Read raw encoder values */
+      g_param.fdc0_ch0 = fdc2214_read_ch(0);
+	  g_param.fdc0_ch1 = fdc2214_read_ch(1);
+	  g_param.fdc0_ch2 = fdc2214_read_ch(2);
+
+	  /* set step frequency with latest parameter value */
+	  ranger_set_step_frequency(g_param.step_freq);
+
+	  //ranger_app_set_led_pa1(g_param.led1);
+	  ranger_app_check_reset();
+	  ranger_app_check_step_enable();
   }
+
 }
 
 /**
@@ -292,8 +301,8 @@ static void ranger_app_handle_write(const ace_command_frame_t *frame)
 
   param_value = ((uint32_t)frame->payload[0]) |
 		 	 	((uint32_t)frame->payload[1] << 8)|
-				((uint32_t)frame->payload[1] << 16)|
-				((uint32_t)frame->payload[1] << 24);
+				((uint32_t)frame->payload[2] << 16)|
+				((uint32_t)frame->payload[3] << 24);
 
   if(ranger_param_write(frame->parameter_id, param_value)){
 
@@ -333,4 +342,50 @@ static void ranger_app_check_step_enable(void)
 	{
 		HAL_GPIO_WritePin(GPIOB, DRV_ENABLE, GPIO_PIN_SET);
 	}
+}
+
+/**
+ * @brief Change PWM frequency
+ * NOTE:
+ * The pre-scaler is set to 169+1 such that tick frequency is equal to 170/170 = 1MHz
+ */
+void ranger_set_step_frequency(uint32_t freq_hz)
+{
+    static uint32_t last_freq_hz = 0;
+    static uint8_t pwm_running = 0;
+
+    if (freq_hz == last_freq_hz)
+    {
+        return;
+    }
+
+    last_freq_hz = freq_hz;
+
+    if (freq_hz == 0)
+    {
+        if (pwm_running)
+        {
+            HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_2);
+            pwm_running = 0;
+        }
+        return;
+    }
+
+    uint32_t arr = (1000000UL / freq_hz) - 1UL;
+
+    if (arr < 4)
+    {
+        arr = 4; // avoid invalid pulse width situation
+    }
+
+    __HAL_TIM_SET_AUTORELOAD(&htim2, arr);
+    __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 3);
+
+    TIM2->EGR = TIM_EGR_UG;
+
+    if (!pwm_running)
+    {
+        HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
+        pwm_running = 1;
+    }
 }

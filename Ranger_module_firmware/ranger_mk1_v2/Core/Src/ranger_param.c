@@ -12,9 +12,10 @@ ranger_param_t g_param =
 	.step_enable = 0, 		// Is it better to map this to HW sleep?
 	.step_microstep = 1,
 	.step_dir = 0,
-	.step_freq = 1,
+	.step_freq = 0,
 	.led1 = 1,
-	.test = 2
+	.test = 2,
+	.error_flag = 0
 };
 
 
@@ -30,7 +31,10 @@ static const ranger_param_entry_t param_table[] =
     { PARAM_LED_PA1,		  &g_param.led1,         		PARAM_U8,  PARAM_RW },
 	{ PARAM_RESET,		      &g_param.reset,         		PARAM_U8,  PARAM_RW },
 	{ PARAM_TEST,		      &g_param.test,         		PARAM_U32, PARAM_RW },
-    { PARAM_FDC1_CH0,		  &g_param.fdc1_ch0,            PARAM_U32, PARAM_RW }
+	{ PARAM_ERROR_FLAG,		  &g_param.error_flag,         	PARAM_U32, PARAM_RO },
+    { PARAM_FDC0_CH0,		  &g_param.fdc0_ch0,            PARAM_U32, PARAM_RW },
+	{ PARAM_FDC0_CH1,		  &g_param.fdc0_ch1,            PARAM_U32, PARAM_RW },
+	{ PARAM_FDC0_CH2,		  &g_param.fdc0_ch2,            PARAM_U32, PARAM_RW }
 };
 
 

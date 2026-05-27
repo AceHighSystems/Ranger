@@ -45,7 +45,11 @@
    ========================= */
 #define PARAM_LED_PA1          		  0xC0U
 #define PARAM_TEST          		  0xC1U
-#define PARAM_FDC1_CH0        		  0xC2U
+#define PARAM_ERROR_FLAG              0xC2U
+
+#define PARAM_FDC0_CH0        		  0xD0U
+#define PARAM_FDC0_CH1       		  0xD1U
+#define PARAM_FDC0_CH2       		  0xD2U
 
 
 
@@ -72,13 +76,13 @@ typedef struct
 	uint8_t   led1;
 
     uint32_t  uptime_s;
-    uint32_t  error_flags;
+    uint32_t  error_flag;
 
-    uint32_t   test;
+    uint32_t  test;
 
-    uint32_t   fdc1_ch0;
-    uint32_t   fdc1_ch1;
-    uint32_t   fdc1_ch2;
+    uint32_t  fdc0_ch0;
+    uint32_t  fdc0_ch1;
+    uint32_t  fdc0_ch2;
 
 } ranger_param_t;
 

@@ -7,35 +7,68 @@
  */
 
 #include "main.h"
+#include "FDC2214.h"
+#include <stdbool.h>
 
 #define FDC2214_ADDR_LOW   (0x2A << 1)
 #define FDC2214_ADDR_HIGH  (0x2B << 1)
 
 #define FDC2214_ADDR       FDC2214_ADDR_LOW
 
-void fdc2214_write_register(uint8_t reg, uint16_t value);
-uint16_t fdc2214_read_register(uint8_t reg);
-void fdc2214_init(void);
-uint16_t fdc2214_read_device_id(void);
+static HAL_StatusTypeDef fdc2214_write_register(uint8_t reg, uint16_t value);
+static HAL_StatusTypeDef fdc2214_read_register(uint8_t reg, uint16_t *value);
+
+uint8_t fdc2214_init(void);
+
+void fdc2214_read_device_id(uint16_t *value);
 uint32_t fdc2214_read_ch0_raw(void);
 
 
 extern I2C_HandleTypeDef hi2c1;
 extern I2C_HandleTypeDef hi2c2;
 
-void fdc2214_init(void)
+uint8_t fdc2214_init(void)
 {
-    fdc2214_write_register(0x1A, 0x1C01); // CONFIG
-    fdc2214_write_register(0x1B, 0x020D); // MUX_CONFIG
+	uint16_t id = 0;
 
-    fdc2214_write_register(0x08, 0xFFFF); // RCOUNT_CH0
-    fdc2214_write_register(0x10, 0x0400); // SETTLECOUNT_CH0
-    fdc2214_write_register(0x14, 0x1001); // CLOCK_DIVIDERS_CH0
-    fdc2214_write_register(0x1E, 0x7800); // DRIVE_CURRENT_CH0
+	if (fdc2214_read_register(0x7F, &id) != HAL_OK)
+	{
+	    return 2;
+	}
+
+	if (id != 0x3055)   // expected FDC2214 device ID
+	{
+	    return 3;
+	}
+
+    if (fdc2214_write_register(0x1A, 0x1E01 | 0x2000) != HAL_OK) return 4; // Configure while in sleep first, external clock + sleep mode
+
+    // ch0
+    if (fdc2214_write_register(0x08, 0xFFFF) != HAL_OK) return 4; // RCOUNT
+    if (fdc2214_write_register(0x10, 0x1000) != HAL_OK) return 4; // SETTLECOUNT
+    if (fdc2214_write_register(0x14, 0x1002) != HAL_OK) return 4; // CLOCK_DIVIDERS
+    if (fdc2214_write_register(0x1E, 0xA000) != HAL_OK) return 4; // DRIVE_CURRENT
+
+    // ch1
+    if (fdc2214_write_register(0x09, 0xFFFF) != HAL_OK) return 4;
+    if (fdc2214_write_register(0x11, 0x1000) != HAL_OK) return 4;
+    if (fdc2214_write_register(0x15, 0x1002) != HAL_OK) return 4;
+    if (fdc2214_write_register(0x1F, 0xA000) != HAL_OK) return 4;
+
+    // ch2
+    if (fdc2214_write_register(0x0A, 0xFFFF) != HAL_OK) return 4;
+    if (fdc2214_write_register(0x12, 0x1000) != HAL_OK) return 4;
+    if (fdc2214_write_register(0x16, 0x1002) != HAL_OK) return 4;
+    if (fdc2214_write_register(0x20, 0xA000) != HAL_OK) return 4;
+
+    if (fdc2214_write_register(0x1B, 0xA005) != HAL_OK) return 4; // Autoscan CH0, CH1, CH2, deglitch 10 MHz
+    if (fdc2214_write_register(0x1A, 0x1E01) != HAL_OK) return 4; // Exit sleep, external CLKIN
+
+    return 1;
 }
 
 
-void fdc2214_write_register(uint8_t reg, uint16_t value)
+static HAL_StatusTypeDef fdc2214_write_register(uint8_t reg, uint16_t value)
 {
     uint8_t tx[3];
 
@@ -43,26 +76,40 @@ void fdc2214_write_register(uint8_t reg, uint16_t value)
     tx[1] = (value >> 8) & 0xFF;
     tx[2] = value & 0xFF;
 
-    HAL_I2C_Master_Transmit(&hi2c1, FDC2214_ADDR, tx, 3, HAL_MAX_DELAY);
+    return HAL_I2C_Master_Transmit(&hi2c2, FDC2214_ADDR, tx, 3, 100);
 }
 
 
-uint16_t fdc2214_read_register(uint8_t reg)
+static HAL_StatusTypeDef fdc2214_read_register(uint8_t reg, uint16_t *value)
 {
-    uint8_t tx = reg;
     uint8_t rx[2];
 
-    HAL_I2C_Master_Transmit(&hi2c1, FDC2214_ADDR, &tx, 1, HAL_MAX_DELAY);
-    HAL_I2C_Master_Receive(&hi2c1, FDC2214_ADDR, rx, 2, HAL_MAX_DELAY);
+    if (HAL_I2C_Master_Transmit(&hi2c2, FDC2214_ADDR, &reg, 1, 100) != HAL_OK)
+    {
+        return HAL_ERROR;
+    }
 
-    return ((uint16_t)rx[0] << 8) | rx[1];
+    if (HAL_I2C_Master_Receive(&hi2c2, FDC2214_ADDR, rx, 2, 100) != HAL_OK)
+    {
+        return HAL_ERROR;
+    }
+
+    *value = ((uint16_t)rx[0] << 8) | rx[1];
+
+    return HAL_OK;
 }
 
 
-uint32_t fdc2214_read_ch0_raw(void)
+uint32_t fdc2214_read_ch(uint8_t ch)
 {
-    uint16_t msb = fdc2214_read_register(0x00);
-    uint16_t lsb = fdc2214_read_register(0x01);
+	uint8_t reg_msb = ch * 2;
+	uint8_t reg_lsb = reg_msb + 1;
+
+	uint16_t msb;
+	uint16_t lsb;
+
+    fdc2214_read_register(reg_msb, &msb);
+    fdc2214_read_register(reg_lsb, &lsb);
 
     uint32_t value = 0;
 
@@ -73,8 +120,8 @@ uint32_t fdc2214_read_ch0_raw(void)
 }
 
 
-uint16_t fdc2214_read_device_id(void)
+void fdc2214_read_device_id(uint16_t *value)
 {
-    return fdc2214_read_register(0x7F);
+    fdc2214_read_register(0x7F, value);
 }
 

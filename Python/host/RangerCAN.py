@@ -4,6 +4,12 @@ import time
 import threading
 import can
 import queue
+from collections import deque
+from matplotlib.ticker import AutoMinorLocator
+import matplotlib.pyplot as plt
+from PyQt6 import QtWidgets, QtCore
+import pyqtgraph as pg
+import sys
 import ace_constants as ACE
 import ranger_mk1_param as RANGER
 # -----------------------------
@@ -53,9 +59,31 @@ PARAMETERS = {
     "current":      RANGER.PARAM_CURRENT,
     "temp":         RANGER.PARAM_TEMPERATURE,
     "test":         RANGER.PARAM_TEST,
-    "ch0":       RANGER.PARAM_FDC1_CH0
+    "error":        RANGER.PARAM_ERROR_FLAG,
+    "ch0":          RANGER.PARAM_FDC0_CH0,
+    "ch1":          RANGER.PARAM_FDC0_CH1,
+    "ch2":          RANGER.PARAM_FDC0_CH2
 }
 
+
+# START SETUP Plotting  -----------------------------------------------------------------------------------------------------
+
+plt.style.use("dark_background")
+
+PLOT_LEN = 300
+UPDATE_HZ = 80
+UPDATE_DT = 1.0 / UPDATE_HZ
+
+channel_data = [
+    deque(maxlen=PLOT_LEN),
+    deque(maxlen=PLOT_LEN),
+    deque(maxlen=PLOT_LEN),
+]
+
+
+
+
+# END SETUP - Ploting -----------------------------------------------------------------------------------------------------
 
 rx_queue = queue.Queue()
 
@@ -263,10 +291,17 @@ def decode_response(msg: can.Message) -> None:
         temp = payload_to_i32(payload)/1000
         safe_print(f"Temperature = {temp:.3f} °C")   
 
-    if command_id == ACE_CMD_READ and status_code == ACE_STATUS_DATA_FOLLOWS and parameter_id == RANGER.PARAM_FDC1_CH0:
+    if command_id == ACE_CMD_READ and status_code == ACE_STATUS_DATA_FOLLOWS and parameter_id == RANGER.PARAM_FDC0_CH0:
         value = (payload[0] | (payload[1] << 8) | (payload[2] << 16) | (payload[3] << 24))
-        safe_print("Raw: ", value)   
+        safe_print("Raw ch0: ", value)
 
+    if command_id == ACE_CMD_READ and status_code == ACE_STATUS_DATA_FOLLOWS and parameter_id == RANGER.PARAM_FDC0_CH1:
+        value = (payload[0] | (payload[1] << 8) | (payload[2] << 16) | (payload[3] << 24))
+        safe_print("Raw ch1: ", value) 
+
+    if command_id == ACE_CMD_READ and status_code == ACE_STATUS_DATA_FOLLOWS and parameter_id == RANGER.PARAM_FDC0_CH2:
+        value = (payload[0] | (payload[1] << 8) | (payload[2] << 16) | (payload[3] << 24))
+        safe_print("Raw ch2: ", value) 
 
 def listener_thread(bus: can.Bus) -> None:
     global running
@@ -304,12 +339,12 @@ def wait_for_response(timeout=1.0):
 
 
 def send_command(bus: can.Bus, msg: can.Message, label: str) -> None:
-    try:
-        safe_print(f"\n---- {label} ----")
-        print_message("TX", msg)
-        bus.send(msg)
-    except Exception as exc:
-        safe_print(f"Send error: {exc}")
+    #try:
+        #safe_print(f"\n---- {label} ----")
+        #print_message("TX", msg)
+    bus.send(msg)
+    #except Exception as exc:
+        #safe_print(f"Send error: {exc}")
 
 
 def print_menu() -> None:
@@ -500,6 +535,189 @@ def program_new_firmware(bus: can.Bus):
 
 
 # END Program new Firmware --------------------------------------------------------------------------------
+PLOT_LEN = 500
+UPDATE_MS = 20      # 50 Hz GUI refresh
+CAN_POLL_MS = 1     # fast polling
+
+
+def decode_u32_le(payload):
+    return (
+        payload[0]
+        | (payload[1] << 8)
+        | (payload[2] << 16)
+        | (payload[3] << 24)
+    )
+
+
+def plot_channels_live_pyqtgraph(bus):
+    channels = [
+        ("ch0", RANGER.PARAM_FDC0_CH0, 0),
+        ("ch1", RANGER.PARAM_FDC0_CH1, 1),
+        ("ch2", RANGER.PARAM_FDC0_CH2, 2),
+    ]
+
+    channel_data = [
+        deque(maxlen=PLOT_LEN),
+        deque(maxlen=PLOT_LEN),
+        deque(maxlen=PLOT_LEN),
+    ]
+
+    app = QtWidgets.QApplication.instance()
+    if app is None:
+        app = QtWidgets.QApplication(sys.argv)
+
+    win = pg.GraphicsLayoutWidget(title="Ranger FDC Live Plot")
+    win.resize(1000, 700)
+    win.show()
+
+    plots = []
+    curves = []
+
+    for i, (name, _, _) in enumerate(channels):
+        plot = win.addPlot(row=i, col=0, title=name)
+        plot.showGrid(x=True, y=True)
+        plot.setLabel("left", "Raw value")
+        plot.setLabel("bottom", "Sample")
+
+        curve = plot.plot(
+            pen=pg.mkPen(color="#52F7AD", width=2),
+            name=name
+        )
+
+        plots.append(plot)
+        curves.append(curve)
+
+    def poll_can():
+        for ch_name, expected_param, plot_index in channels:
+            send_command(
+                bus,
+                build_read(ch_name),
+                f"READ {ch_name}"
+            )
+
+            msg = wait_for_response(timeout=0.1)
+
+            if msg is None:
+                continue
+
+            command_id   = msg.data[0]
+            parameter_id = msg.data[1]
+            status_code  = msg.data[2]
+            payload      = msg.data[3:8]
+
+            if (
+                command_id == ACE_CMD_READ and
+                status_code == ACE_STATUS_DATA_FOLLOWS and
+                parameter_id == expected_param
+            ):
+                value = decode_u32_le(payload)
+                channel_data[plot_index].append(value)
+
+    def update_plot():
+        for i in range(3):
+            data = list(channel_data[i])
+
+            if not data:
+                continue
+
+            curves[i].setData(data)
+
+    can_timer = QtCore.QTimer()
+    can_timer.timeout.connect(poll_can)
+    can_timer.start(CAN_POLL_MS)
+
+    plot_timer = QtCore.QTimer()
+    plot_timer.timeout.connect(update_plot)
+    plot_timer.start(UPDATE_MS)
+
+    try:
+        app.exec()
+    except KeyboardInterrupt:
+        safe_print("Stopping live plot...")
+        win.close()
+
+
+
+def plot_channels_live(bus):
+    channels = [
+        ("ch0", RANGER.PARAM_FDC0_CH0, 0),
+        ("ch1", RANGER.PARAM_FDC0_CH1, 1),
+        ("ch2", RANGER.PARAM_FDC0_CH2, 2),
+    ]
+
+    plt.ion()
+
+    last_plot_update = 0
+
+    try:
+        while True:
+            for ch_name, expected_param, plot_index in channels:
+
+                send_command(
+                    bus,
+                    build_read(ch_name),
+                    f"READ {ch_name}"
+                )
+
+                # Big improvement: do not wait 1 second per channel
+                msg = wait_for_response(timeout=0.02)
+
+                if msg is None:
+                    continue
+
+                command_id   = msg.data[0]
+                parameter_id = msg.data[1]
+                status_code  = msg.data[2]
+                payload      = msg.data[3:8]
+
+                if (
+                    command_id == ACE_CMD_READ and
+                    status_code == ACE_STATUS_DATA_FOLLOWS and
+                    parameter_id == expected_param
+                ):
+                    value = (
+                        payload[0]
+                        | (payload[1] << 8)
+                        | (payload[2] << 16)
+                        | (payload[3] << 24)
+                    )
+
+                    channel_data[plot_index].append(value)
+
+            now = time.time()
+
+            # Limit plot refresh rate
+            if now - last_plot_update >= UPDATE_DT:
+                last_plot_update = now
+
+                for i in range(3):
+                    data = list(channel_data[i])
+
+                    if not data:
+                        continue
+
+                    x = range(len(data))
+                    lines[i].set_data(x, data)
+
+                    ax[i].set_xlim(0, PLOT_LEN)
+
+                    ymin = min(data)
+                    ymax = max(data)
+
+                    if ymin == ymax:
+                        ymin -= 1
+                        ymax += 1
+
+                    ax[i].set_ylim(ymin, ymax)
+
+                fig.canvas.draw_idle()
+                fig.canvas.flush_events()
+
+    except KeyboardInterrupt:
+        safe_print("Stopping live plot...")
+        plt.ioff()
+        plt.close()
+  
 
 # Main loop definition STARTS here -------------------------------------------------------------------------------------
 
@@ -571,6 +789,20 @@ def main() -> None:
             elif tokens[0] == "program":
                 program_new_firmware(bus)
             
-                
+            
+            # -------------------------
+            # Plot encoder data measurments
+            # -------------------------
+            elif tokens[0] == "plot":
+                plot_channels_live_pyqtgraph(bus)
+            
+            # -------------------------
+            # Exit python script
+            # -------------------------
+            elif tokens[0] in ["q", "quit", "exit"]:
+                safe_print("Exiting...")
+                running = False
+                break
+
 if __name__ == "__main__":
     main()

@@ -38,4 +38,8 @@ PARAM_TEMPERATURE       = 0x82
 # ===============================
 PARAM_LED_PA1           = 0xC0
 PARAM_TEST              = 0xC1
-PARAM_FDC1_CH0          = 0xC2
+PARAM_ERROR_FLAG        = 0xC2
+
+PARAM_FDC0_CH0          = 0xD0
+PARAM_FDC0_CH1          = 0xD1
+PARAM_FDC0_CH2          = 0xD2

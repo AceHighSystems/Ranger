@@ -214,7 +214,7 @@ void drv8462_init_fullstep_spi_mode(void)
      *
      */
     drv8462_write_register(0x10, 0x12);
-    drv8462_write_register(0x0E, 0x0A); // low torque/current for bring-up
+    drv8462_write_register(0x0E, 0x0A); // current limit - low torque/current for bring-up
 
     /*
      * Configure CTRL2:
@@ -225,9 +225,9 @@ void drv8462_init_fullstep_spi_mode(void)
      */
     uint8_t ctrl2_value = 0;
 
-    ctrl2_value |= DRV8462_CTRL2_SPI_DIR;
-    ctrl2_value |= DRV8462_CTRL2_SPI_STEP;
-    ctrl2_value |= 0x0A; // micro-step
+    //ctrl2_value |= DRV8462_CTRL2_SPI_DIR;
+    //ctrl2_value |= DRV8462_CTRL2_SPI_STEP;
+    ctrl2_value |= 0x08; // micro-step
 
     drv8462_write_register(DRV8462_REG_CTRL2, ctrl2_value);
 
@@ -242,6 +242,7 @@ void drv8462_init_fullstep_spi_mode(void)
     ctrl1_value |= DRV8462_CTRL1_EN_OUT;
 
     drv8462_write_register(DRV8462_REG_CTRL1, ctrl1_value);
+
 }
 
 
@@ -256,7 +257,7 @@ void drv8462_set_direction(uint8_t direction_is_forward)
 
     ctrl2_value |= DRV8462_CTRL2_SPI_DIR;
     ctrl2_value |= DRV8462_CTRL2_SPI_STEP;
-    ctrl2_value |= DRV8462_FULLSTEP_100_PERCENT_CURRENT;
+    ctrl2_value |= 0x08; // micro-step;
 
     if (direction_is_forward != 0)
     {
@@ -278,7 +279,7 @@ void drv8462_step_once(uint8_t direction_is_forward)
 
     ctrl2_value |= DRV8462_CTRL2_SPI_DIR;
     ctrl2_value |= DRV8462_CTRL2_SPI_STEP;
-    ctrl2_value |= DRV8462_FULLSTEP_100_PERCENT_CURRENT;
+    ctrl2_value |= 0x08; // micro-step;
 
     if (direction_is_forward != 0)
     {
@@ -311,11 +312,11 @@ void drv8462_step_once_HW(uint8_t direction)
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET); // direction 0
 	}
 
-	// Toggle the STEP pin
+	// Toggle the STEP pin with PWM output
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
-	HAL_Delay(10);
+	HAL_Delay(5);
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
-	HAL_Delay(10);
+	HAL_Delay(5);
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
 
 }

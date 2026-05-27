@@ -1,5 +1,5 @@
-../Core/Src/FDC2214.c:26:6:fdc2214_init	1
-../Core/Src/FDC2214.c:38:6:fdc2214_write_register	1
-../Core/Src/FDC2214.c:50:10:fdc2214_read_register	1
-../Core/Src/FDC2214.c:62:10:fdc2214_read_ch0_raw	1
-../Core/Src/FDC2214.c:76:10:fdc2214_read_device_id	1
+../Core/Src/FDC2214.c:30:9:fdc2214_init	18
+../Core/Src/FDC2214.c:71:26:fdc2214_write_register	1
+../Core/Src/FDC2214.c:83:26:fdc2214_read_register	3
+../Core/Src/FDC2214.c:103:10:fdc2214_read_ch	1
+../Core/Src/FDC2214.c:123:6:fdc2214_read_device_id	1

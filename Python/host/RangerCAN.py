@@ -766,7 +766,7 @@ def read_all_channels(bus):
             f"READ {ch_name}"
         )
 
-        msg = wait_for_response(timeout=0.2)
+        msg = wait_for_response(timeout=2)
 
         if msg is None:
             continue
@@ -784,6 +784,212 @@ def read_all_channels(bus):
             values[i] = decode_u32_le(payload)
 
     return values
+
+
+
+def calibrate(bus):
+    duration_s = 300
+    start_time = time.monotonic()
+    
+    ch_max = [0] * 12
+    ch_min = [float("inf")] * 12
+
+    ch_offset = [0] * 12
+    ch_gain = [0] * 12
+
+    sample_count = 0
+
+    while (time.monotonic() - start_time) < duration_s:
+
+        values = read_all_channels(bus)  # should return list of 12 values
+
+        if values is None:
+            continue
+
+        for i, value in enumerate(values):
+            ch_max[i] = max(ch_max[i], value)
+            ch_min[i] = min(ch_min[i], value)
+
+    for i in range(12):
+        ch_offset[i] = (ch_max[i] + ch_min[i]) / 2.0
+        ch_gain[i]   = (ch_max[i] - ch_min[i]) / 2.0
+
+    safe_print("Calibration complete")
+    print("ch_min    =", ch_min)
+    print("ch_max    =", ch_max)
+    print("ch_offset =", ch_offset)
+    print("ch_gain   =", ch_gain)
+
+    return ch_offset, ch_gain
+
+import time
+import math
+import pyqtgraph as pg
+from pyqtgraph.Qt import QtWidgets
+
+import time
+import pyqtgraph as pg
+from pyqtgraph.Qt import QtWidgets
+
+def get_angle(bus, ch_offset, ch_gain):
+
+    app = QtWidgets.QApplication([])
+
+    win = pg.GraphicsLayoutWidget(show=True)
+    win.setWindowTitle("Differential Sin/Cos")
+
+    #
+    # TOP PLOT
+    # sin_diff and cos_diff vs time
+    #
+    plot_time = win.addPlot(title="Differential Sin/Cos vs Time")
+
+    plot_time.addLegend()
+    plot_time.showGrid(x=True, y=True)
+
+    plot_time.setYRange(-1.2, 1.2)
+
+    sin_curve = plot_time.plot(
+        pen='r',
+        name='sin_diff'
+    )
+
+    cos_curve = plot_time.plot(
+        pen='b',
+        name='cos_diff'
+    )
+
+    #
+    # Angle text display
+    #
+    angle_text = pg.TextItem(
+        text="Angle: 0.00000 deg",
+        color='w',
+        anchor=(0, 0)
+    )
+
+    plot_time.addItem(angle_text)
+
+    #
+    # place text in upper left corner
+    #
+    angle_text.setPos(10, 1.05)
+
+    #
+    # NEXT ROW
+    #
+    win.nextRow()
+
+    #
+    # BOTTOM PLOT
+    # XY circle plot
+    #
+    plot_xy = win.addPlot(title="Sin/Cos XY Plot")
+
+    plot_xy.showGrid(x=True, y=True)
+
+    plot_xy.setXRange(-1.2, 1.2)
+    plot_xy.setYRange(-1.2, 1.2)
+
+    plot_xy.setAspectLocked(True)
+
+    xy_curve = plot_xy.plot(
+        pen=None,
+        symbol='o',
+        symbolSize=3
+    )
+
+    history_len = 500
+
+    sin_history = [0] * history_len
+    cos_history = [0] * history_len
+
+    xy_x = [0] * history_len
+    xy_y = [0] * history_len
+
+    while True:
+
+        ch_raw = read_all_channels(bus)
+
+        if ch_raw is None:
+            continue
+
+        ch_norm = [0] * 12
+
+        for i in range(12):
+
+            if ch_gain[i] != 0:
+
+                ch_norm[i] = (
+                    (ch_raw[i] - ch_offset[i])
+                    / ch_gain[i]
+                )
+
+        #
+        # grouped channels
+        #
+        sin_1 = (ch_norm[0] + ch_norm[4] + ch_norm[9]) / 3
+        sin_2 = (ch_norm[2] + ch_norm[7] + ch_norm[11]) / 3
+
+        cos_1 = (ch_norm[1] + ch_norm[5] + ch_norm[8]) / 3
+        cos_2 = (ch_norm[3] + ch_norm[6] + ch_norm[10]) / 3
+
+        #
+        # differential signals
+        #
+        sin_diff = (sin_1 - sin_2) / 2
+        cos_diff = (cos_1 - cos_2) / 2
+
+        #
+        # angle calculation
+        #
+        angle_rad = math.atan2(sin_diff, cos_diff)
+
+        angle_deg = math.degrees(angle_rad)
+
+        #
+        # wrap to 0..360 deg
+        #
+        if angle_deg < 0:
+            angle_deg += 360.0
+
+        #
+        # update text
+        #
+        angle_text.setText(
+            f"Angle: {angle_deg:.5f} deg"
+        )
+
+        #
+        # update rolling buffers
+        #
+        sin_history.append(sin_diff)
+        sin_history.pop(0)
+
+        cos_history.append(cos_diff)
+        cos_history.pop(0)
+
+        #
+        # XY buffers
+        #
+        xy_x.append(cos_diff)
+        xy_x.pop(0)
+
+        xy_y.append(sin_diff)
+        xy_y.pop(0)
+
+        #
+        # update plots
+        #
+        sin_curve.setData(sin_history)
+        cos_curve.setData(cos_history)
+
+        xy_curve.setData(xy_x, xy_y)
+
+        app.processEvents()
+
+        time.sleep(0.02)
+    
 
 
 # Main loop definition STARTS here -------------------------------------------------------------------------------------
@@ -868,7 +1074,15 @@ def main() -> None:
             # -------------------------
             elif tokens[0] == "readall":
                 values = read_all_channels(bus)
-                safe_print(values)            
+                safe_print(values)    
+            
+            # -------------------------
+            # Encoder calibration and angle read
+            # -------------------------
+            elif tokens[0] == "cali":
+                ch_offset, ch_gain = calibrate(bus)
+                get_angle(bus, ch_offset, ch_gain)
+
             # -------------------------
             # Exit python script
             # -------------------------

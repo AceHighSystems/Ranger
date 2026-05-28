@@ -224,7 +224,7 @@ void ranger_app_tick(void)
   //ranger_can_request_node_id_change(frame->payload[0]);
 
   /* Tasks scheduled to run every x miliseconds */
-  if ((now - last_ina_ms) >=10U)
+  if ((now - last_ina_ms) >=5U)
   {
       last_ina_ms = now;
 

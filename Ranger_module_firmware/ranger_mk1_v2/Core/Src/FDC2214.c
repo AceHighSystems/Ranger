@@ -46,19 +46,19 @@ uint8_t fdc2214_0_init(void)
     if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_LOW, 0x1A, 0x1E01 | 0x2000) != HAL_OK) return 4; // Configure while in sleep first, external clock + sleep mode
 
     // ch0
-    if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_LOW, 0x08, 0xFFFF) != HAL_OK) return 4; // RCOUNT
+    if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_LOW, 0x08, 0x1000) != HAL_OK) return 4; // RCOUNT
     if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_LOW, 0x10, 0x1000) != HAL_OK) return 4; // SETTLECOUNT
     if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_LOW, 0x14, 0x1002) != HAL_OK) return 4; // CLOCK_DIVIDERS
     if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_LOW, 0x1E, 0xA000) != HAL_OK) return 4; // DRIVE_CURRENT
 
     // ch1
-    if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_LOW, 0x09, 0xFFFF) != HAL_OK) return 4;
+    if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_LOW, 0x09, 0x1000) != HAL_OK) return 4;
     if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_LOW, 0x11, 0x1000) != HAL_OK) return 4;
     if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_LOW, 0x15, 0x1002) != HAL_OK) return 4;
     if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_LOW, 0x1F, 0xA000) != HAL_OK) return 4;
 
     // ch2
-    if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_LOW, 0x0A, 0xFFFF) != HAL_OK) return 4;
+    if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_LOW, 0x0A, 0x1000) != HAL_OK) return 4;
     if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_LOW, 0x12, 0x1000) != HAL_OK) return 4;
     if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_LOW, 0x16, 0x1002) != HAL_OK) return 4;
     if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_LOW, 0x20, 0xA000) != HAL_OK) return 4;
@@ -86,19 +86,19 @@ uint8_t fdc2214_1_init(void)
     if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_HIGH, 0x1A, 0x1E01 | 0x2000) != HAL_OK) return 4; // Configure while in sleep first, external clock + sleep mode
 
     // ch0
-    if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_HIGH, 0x08, 0xFFFF) != HAL_OK) return 4; // RCOUNT
+    if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_HIGH, 0x08, 0x1000) != HAL_OK) return 4; // RCOUNT
     if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_HIGH, 0x10, 0x1000) != HAL_OK) return 4; // SETTLECOUNT
     if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_HIGH, 0x14, 0x1002) != HAL_OK) return 4; // CLOCK_DIVIDERS
     if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_HIGH, 0x1E, 0xA000) != HAL_OK) return 4; // DRIVE_CURRENT
 
     // ch1
-    if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_HIGH, 0x09, 0xFFFF) != HAL_OK) return 4;
+    if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_HIGH, 0x09, 0x1000) != HAL_OK) return 4;
     if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_HIGH, 0x11, 0x1000) != HAL_OK) return 4;
     if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_HIGH, 0x15, 0x1002) != HAL_OK) return 4;
     if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_HIGH, 0x1F, 0xA000) != HAL_OK) return 4;
 
     // ch2
-    if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_HIGH, 0x0A, 0xFFFF) != HAL_OK) return 4;
+    if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_HIGH, 0x0A, 0x1000) != HAL_OK) return 4;
     if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_HIGH, 0x12, 0x1000) != HAL_OK) return 4;
     if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_HIGH, 0x16, 0x1002) != HAL_OK) return 4;
     if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_HIGH, 0x20, 0xA000) != HAL_OK) return 4;
@@ -127,19 +127,19 @@ uint8_t fdc2214_2_init(void)
     if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_LOW, 0x1A, 0x1E01 | 0x2000) != HAL_OK) return 4; // Configure while in sleep first, external clock + sleep mode
 
     // ch0
-    if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_LOW, 0x08, 0xFFFF) != HAL_OK) return 4; // RCOUNT
+    if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_LOW, 0x08, 0x1000) != HAL_OK) return 4; // RCOUNT
     if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_LOW, 0x10, 0x1000) != HAL_OK) return 4; // SETTLECOUNT
     if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_LOW, 0x14, 0x1002) != HAL_OK) return 4; // CLOCK_DIVIDERS
     if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_LOW, 0x1E, 0xA000) != HAL_OK) return 4; // DRIVE_CURRENT
 
     // ch1
-    if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_LOW, 0x09, 0xFFFF) != HAL_OK) return 4;
+    if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_LOW, 0x09, 0x1000) != HAL_OK) return 4;
     if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_LOW, 0x11, 0x1000) != HAL_OK) return 4;
     if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_LOW, 0x15, 0x1002) != HAL_OK) return 4;
     if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_LOW, 0x1F, 0xA000) != HAL_OK) return 4;
 
     // ch2
-    if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_LOW, 0x0A, 0xFFFF) != HAL_OK) return 4;
+    if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_LOW, 0x0A, 0x1000) != HAL_OK) return 4;
     if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_LOW, 0x12, 0x1000) != HAL_OK) return 4;
     if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_LOW, 0x16, 0x1002) != HAL_OK) return 4;
     if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_LOW, 0x20, 0xA000) != HAL_OK) return 4;
@@ -167,19 +167,19 @@ uint8_t fdc2214_3_init(void)
     if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_HIGH, 0x1A, 0x1E01 | 0x2000) != HAL_OK) return 4; // Configure while in sleep first, external clock + sleep mode
 
     // ch0
-    if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_HIGH, 0x08, 0xFFFF) != HAL_OK) return 4; // RCOUNT
+    if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_HIGH, 0x08, 0x1000) != HAL_OK) return 4; // RCOUNT
     if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_HIGH, 0x10, 0x1000) != HAL_OK) return 4; // SETTLECOUNT
     if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_HIGH, 0x14, 0x1002) != HAL_OK) return 4; // CLOCK_DIVIDERS
     if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_HIGH, 0x1E, 0xA000) != HAL_OK) return 4; // DRIVE_CURRENT
 
     // ch1
-    if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_HIGH, 0x09, 0xFFFF) != HAL_OK) return 4;
+    if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_HIGH, 0x09, 0x1000) != HAL_OK) return 4;
     if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_HIGH, 0x11, 0x1000) != HAL_OK) return 4;
     if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_HIGH, 0x15, 0x1002) != HAL_OK) return 4;
     if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_HIGH, 0x1F, 0xA000) != HAL_OK) return 4;
 
     // ch2
-    if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_HIGH, 0x0A, 0xFFFF) != HAL_OK) return 4;
+    if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_HIGH, 0x0A, 0x1000) != HAL_OK) return 4;
     if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_HIGH, 0x12, 0x1000) != HAL_OK) return 4;
     if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_HIGH, 0x16, 0x1002) != HAL_OK) return 4;
     if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_HIGH, 0x20, 0xA000) != HAL_OK) return 4;

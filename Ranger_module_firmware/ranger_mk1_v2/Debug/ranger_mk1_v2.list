@@ -245,7 +245,7 @@ void drv8462_init_fullstep_spi_mode(void)
 
     //ctrl2_value |= DRV8462_CTRL2_SPI_DIR;
     //ctrl2_value |= DRV8462_CTRL2_SPI_STEP;
-    ctrl2_value |= 0x0A; // micro-step
+    ctrl2_value |= 0x0A; // micro-step 1/256
  80082d0:	79fb      	ldrb	r3, [r7, #7]
  80082d2:	f043 030a 	orr.w	r3, r3, #10
  80082d6:	71fb      	strb	r3, [r7, #7]
@@ -334,8 +334,8 @@ uint8_t fdc2214_0_init(void)
  8008344:	e0a8      	b.n	8008498 <fdc2214_0_init+0x198>
 
     // ch0
-    if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_LOW, 0x08, 0xFFFF) != HAL_OK) return 4; // RCOUNT
- 8008346:	f64f 73ff 	movw	r3, #65535	@ 0xffff
+    if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_LOW, 0x08, 0x1000) != HAL_OK) return 4; // RCOUNT
+ 8008346:	f44f 5380 	mov.w	r3, #4096	@ 0x1000
  800834a:	2208      	movs	r2, #8
  800834c:	2154      	movs	r1, #84	@ 0x54
  800834e:	4854      	ldr	r0, [pc, #336]	@ (80084a0 <fdc2214_0_init+0x1a0>)
@@ -380,8 +380,8 @@ uint8_t fdc2214_0_init(void)
  80083a4:	e078      	b.n	8008498 <fdc2214_0_init+0x198>
 
     // ch1
-    if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_LOW, 0x09, 0xFFFF) != HAL_OK) return 4;
- 80083a6:	f64f 73ff 	movw	r3, #65535	@ 0xffff
+    if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_LOW, 0x09, 0x1000) != HAL_OK) return 4;
+ 80083a6:	f44f 5380 	mov.w	r3, #4096	@ 0x1000
  80083aa:	2209      	movs	r2, #9
  80083ac:	2154      	movs	r1, #84	@ 0x54
  80083ae:	483c      	ldr	r0, [pc, #240]	@ (80084a0 <fdc2214_0_init+0x1a0>)
@@ -426,8 +426,8 @@ uint8_t fdc2214_0_init(void)
  8008404:	e048      	b.n	8008498 <fdc2214_0_init+0x198>
 
     // ch2
-    if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_LOW, 0x0A, 0xFFFF) != HAL_OK) return 4;
- 8008406:	f64f 73ff 	movw	r3, #65535	@ 0xffff
+    if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_LOW, 0x0A, 0x1000) != HAL_OK) return 4;
+ 8008406:	f44f 5380 	mov.w	r3, #4096	@ 0x1000
  800840a:	220a      	movs	r2, #10
  800840c:	2154      	movs	r1, #84	@ 0x54
  800840e:	4824      	ldr	r0, [pc, #144]	@ (80084a0 <fdc2214_0_init+0x1a0>)
@@ -553,8 +553,8 @@ uint8_t fdc2214_1_init(void)
  80084e8:	e0a8      	b.n	800863c <fdc2214_1_init+0x198>
 
     // ch0
-    if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_HIGH, 0x08, 0xFFFF) != HAL_OK) return 4; // RCOUNT
- 80084ea:	f64f 73ff 	movw	r3, #65535	@ 0xffff
+    if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_HIGH, 0x08, 0x1000) != HAL_OK) return 4; // RCOUNT
+ 80084ea:	f44f 5380 	mov.w	r3, #4096	@ 0x1000
  80084ee:	2208      	movs	r2, #8
  80084f0:	2156      	movs	r1, #86	@ 0x56
  80084f2:	4854      	ldr	r0, [pc, #336]	@ (8008644 <fdc2214_1_init+0x1a0>)
@@ -599,8 +599,8 @@ uint8_t fdc2214_1_init(void)
  8008548:	e078      	b.n	800863c <fdc2214_1_init+0x198>
 
     // ch1
-    if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_HIGH, 0x09, 0xFFFF) != HAL_OK) return 4;
- 800854a:	f64f 73ff 	movw	r3, #65535	@ 0xffff
+    if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_HIGH, 0x09, 0x1000) != HAL_OK) return 4;
+ 800854a:	f44f 5380 	mov.w	r3, #4096	@ 0x1000
  800854e:	2209      	movs	r2, #9
  8008550:	2156      	movs	r1, #86	@ 0x56
  8008552:	483c      	ldr	r0, [pc, #240]	@ (8008644 <fdc2214_1_init+0x1a0>)
@@ -645,8 +645,8 @@ uint8_t fdc2214_1_init(void)
  80085a8:	e048      	b.n	800863c <fdc2214_1_init+0x198>
 
     // ch2
-    if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_HIGH, 0x0A, 0xFFFF) != HAL_OK) return 4;
- 80085aa:	f64f 73ff 	movw	r3, #65535	@ 0xffff
+    if (fdc2214_write_register(&hi2c1, FDC2214_ADDR_HIGH, 0x0A, 0x1000) != HAL_OK) return 4;
+ 80085aa:	f44f 5380 	mov.w	r3, #4096	@ 0x1000
  80085ae:	220a      	movs	r2, #10
  80085b0:	2156      	movs	r1, #86	@ 0x56
  80085b2:	4824      	ldr	r0, [pc, #144]	@ (8008644 <fdc2214_1_init+0x1a0>)
@@ -773,8 +773,8 @@ uint8_t fdc2214_2_init(void)
  800868c:	e0a8      	b.n	80087e0 <fdc2214_2_init+0x198>
 
     // ch0
-    if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_LOW, 0x08, 0xFFFF) != HAL_OK) return 4; // RCOUNT
- 800868e:	f64f 73ff 	movw	r3, #65535	@ 0xffff
+    if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_LOW, 0x08, 0x1000) != HAL_OK) return 4; // RCOUNT
+ 800868e:	f44f 5380 	mov.w	r3, #4096	@ 0x1000
  8008692:	2208      	movs	r2, #8
  8008694:	2154      	movs	r1, #84	@ 0x54
  8008696:	4854      	ldr	r0, [pc, #336]	@ (80087e8 <fdc2214_2_init+0x1a0>)
@@ -819,8 +819,8 @@ uint8_t fdc2214_2_init(void)
  80086ec:	e078      	b.n	80087e0 <fdc2214_2_init+0x198>
 
     // ch1
-    if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_LOW, 0x09, 0xFFFF) != HAL_OK) return 4;
- 80086ee:	f64f 73ff 	movw	r3, #65535	@ 0xffff
+    if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_LOW, 0x09, 0x1000) != HAL_OK) return 4;
+ 80086ee:	f44f 5380 	mov.w	r3, #4096	@ 0x1000
  80086f2:	2209      	movs	r2, #9
  80086f4:	2154      	movs	r1, #84	@ 0x54
  80086f6:	483c      	ldr	r0, [pc, #240]	@ (80087e8 <fdc2214_2_init+0x1a0>)
@@ -865,8 +865,8 @@ uint8_t fdc2214_2_init(void)
  800874c:	e048      	b.n	80087e0 <fdc2214_2_init+0x198>
 
     // ch2
-    if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_LOW, 0x0A, 0xFFFF) != HAL_OK) return 4;
- 800874e:	f64f 73ff 	movw	r3, #65535	@ 0xffff
+    if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_LOW, 0x0A, 0x1000) != HAL_OK) return 4;
+ 800874e:	f44f 5380 	mov.w	r3, #4096	@ 0x1000
  8008752:	220a      	movs	r2, #10
  8008754:	2154      	movs	r1, #84	@ 0x54
  8008756:	4824      	ldr	r0, [pc, #144]	@ (80087e8 <fdc2214_2_init+0x1a0>)
@@ -992,8 +992,8 @@ uint8_t fdc2214_3_init(void)
  8008830:	e0a8      	b.n	8008984 <fdc2214_3_init+0x198>
 
     // ch0
-    if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_HIGH, 0x08, 0xFFFF) != HAL_OK) return 4; // RCOUNT
- 8008832:	f64f 73ff 	movw	r3, #65535	@ 0xffff
+    if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_HIGH, 0x08, 0x1000) != HAL_OK) return 4; // RCOUNT
+ 8008832:	f44f 5380 	mov.w	r3, #4096	@ 0x1000
  8008836:	2208      	movs	r2, #8
  8008838:	2156      	movs	r1, #86	@ 0x56
  800883a:	4854      	ldr	r0, [pc, #336]	@ (800898c <fdc2214_3_init+0x1a0>)
@@ -1038,8 +1038,8 @@ uint8_t fdc2214_3_init(void)
  8008890:	e078      	b.n	8008984 <fdc2214_3_init+0x198>
 
     // ch1
-    if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_HIGH, 0x09, 0xFFFF) != HAL_OK) return 4;
- 8008892:	f64f 73ff 	movw	r3, #65535	@ 0xffff
+    if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_HIGH, 0x09, 0x1000) != HAL_OK) return 4;
+ 8008892:	f44f 5380 	mov.w	r3, #4096	@ 0x1000
  8008896:	2209      	movs	r2, #9
  8008898:	2156      	movs	r1, #86	@ 0x56
  800889a:	483c      	ldr	r0, [pc, #240]	@ (800898c <fdc2214_3_init+0x1a0>)
@@ -1084,8 +1084,8 @@ uint8_t fdc2214_3_init(void)
  80088f0:	e048      	b.n	8008984 <fdc2214_3_init+0x198>
 
     // ch2
-    if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_HIGH, 0x0A, 0xFFFF) != HAL_OK) return 4;
- 80088f2:	f64f 73ff 	movw	r3, #65535	@ 0xffff
+    if (fdc2214_write_register(&hi2c2, FDC2214_ADDR_HIGH, 0x0A, 0x1000) != HAL_OK) return 4;
+ 80088f2:	f44f 5380 	mov.w	r3, #4096	@ 0x1000
  80088f6:	220a      	movs	r2, #10
  80088f8:	2156      	movs	r1, #86	@ 0x56
  80088fa:	4824      	ldr	r0, [pc, #144]	@ (800898c <fdc2214_3_init+0x1a0>)
@@ -2504,9 +2504,9 @@ static void MX_TIM2_Init(void)
  80090c6:	4b34      	ldr	r3, [pc, #208]	@ (8009198 <MX_TIM2_Init+0x114>)
  80090c8:	f04f 4280 	mov.w	r2, #1073741824	@ 0x40000000
  80090cc:	601a      	str	r2, [r3, #0]
-  htim2.Init.Prescaler = 169;
+  htim2.Init.Prescaler = 79;
  80090ce:	4b32      	ldr	r3, [pc, #200]	@ (8009198 <MX_TIM2_Init+0x114>)
- 80090d0:	22a9      	movs	r2, #169	@ 0xa9
+ 80090d0:	224f      	movs	r2, #79	@ 0x4f
  80090d2:	605a      	str	r2, [r3, #4]
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
  80090d4:	4b30      	ldr	r3, [pc, #192]	@ (8009198 <MX_TIM2_Init+0x114>)
@@ -2598,8 +2598,8 @@ static void MX_TIM2_Init(void)
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
  8009164:	2360      	movs	r3, #96	@ 0x60
  8009166:	607b      	str	r3, [r7, #4]
-  sConfigOC.Pulse = 5;
- 8009168:	2305      	movs	r3, #5
+  sConfigOC.Pulse = 2;
+ 8009168:	2302      	movs	r3, #2
  800916a:	60bb      	str	r3, [r7, #8]
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
  800916c:	2300      	movs	r3, #0
@@ -3256,12 +3256,12 @@ void ranger_app_tick(void)
   //ranger_can_request_node_id_change(frame->payload[0]);
 
   /* Tasks scheduled to run every x miliseconds */
-  if ((now - last_ina_ms) >=10U)
+  if ((now - last_ina_ms) >=5U)
  8009540:	4b53      	ldr	r3, [pc, #332]	@ (8009690 <ranger_app_tick+0x1d8>)
  8009542:	681b      	ldr	r3, [r3, #0]
  8009544:	68fa      	ldr	r2, [r7, #12]
  8009546:	1ad3      	subs	r3, r2, r3
- 8009548:	2b09      	cmp	r3, #9
+ 8009548:	2b04      	cmp	r3, #4
  800954a:	f240 8094 	bls.w	8009676 <ranger_app_tick+0x1be>
   {
       last_ina_ms = now;

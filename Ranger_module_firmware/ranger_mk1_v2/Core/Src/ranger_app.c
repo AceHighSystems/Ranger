@@ -39,16 +39,39 @@ static uint32_t uptime_s = 0U;
 /* sensor measurements */
 int32_t current;
 
+/* FDC sensor measurements */
+uint32_t raw_ch0;
+uint32_t raw_ch1;
+uint32_t raw_ch2;
+uint32_t raw_ch3;
+uint32_t raw_ch4;
+uint32_t raw_ch5;
+uint32_t raw_ch6;
+uint32_t raw_ch7;
+uint32_t raw_ch8;
+uint32_t raw_ch9;
+uint32_t raw_ch10;
+uint32_t raw_ch11;
+
 /* Timing references (ms) */
 static uint32_t last_uptime_ms = 0U;
 static uint32_t last_heartbeat_ms = 0U;
 static uint32_t last_blink_ms = 0U;
 static uint32_t last_ina_ms = 0;
 
+/* Global helper */
+
+uint8_t dir_old = 0;
 /* =========================
    Internal helpers
    ========================= */
 extern TIM_HandleTypeDef htim2;
+
+extern I2C_HandleTypeDef hi2c1;
+extern I2C_HandleTypeDef hi2c2;
+
+#define FDC2214_ADDR_LOW   (0x2A << 1)
+#define FDC2214_ADDR_HIGH  (0x2B << 1)
 
 /**
  * @brief Set LED on PA1 and update internal state
@@ -76,6 +99,7 @@ static void ranger_app_handle_write(const ace_command_frame_t *frame);
 static void ranger_app_check_reset(void);
 static void ranger_app_check_step_enable(void);
 void ranger_set_step_frequency(uint32_t freq_hz);
+static void ranger_app_check_step_dir(void);
 
 
 /* =========================
@@ -123,7 +147,11 @@ void ranger_app_init(void)
   ranger_app_set_led_pa1(0U);
 
   ina229_init();
-  uint8_t check = fdc2214_init();
+  uint8_t check = fdc2214_0_init();
+
+  fdc2214_1_init();
+  fdc2214_2_init();
+  fdc2214_3_init();
 
   if(check != 1){
 	  g_param.error_flag = check;
@@ -196,28 +224,39 @@ void ranger_app_tick(void)
   //ranger_can_request_node_id_change(frame->payload[0]);
 
   /* Tasks scheduled to run every x miliseconds */
-  if ((now - last_ina_ms) >=1U)
+  if ((now - last_ina_ms) >=10U)
   {
       last_ina_ms = now;
 
       /* Read sensor values */
-      //g_param.current = (int32_t)(ina229_read_current()* 1000.0f);
-      //g_param.voltage = (int32_t)(ina229_read_volt() * 1000.0f);
-      //g_param.temperature = (int32_t)ina229_read_temp();
+      g_param.current = (int32_t)(ina229_read_current()* 1000.0f);
+      g_param.voltage = (int32_t)(ina229_read_volt() * 1000.0f);
+      g_param.temperature = (int32_t)ina229_read_temp();
 
       //param.test = fdc2214_read_device_id();
 
-      /* Read raw encoder values */
-      g_param.fdc0_ch0 = fdc2214_read_ch(0);
-	  g_param.fdc0_ch1 = fdc2214_read_ch(1);
-	  g_param.fdc0_ch2 = fdc2214_read_ch(2);
+      g_param.fdc0_ch0 = fdc2214_read_ch(&hi2c1, FDC2214_ADDR_LOW, 0);
+      g_param.fdc0_ch1 = fdc2214_read_ch(&hi2c1, FDC2214_ADDR_LOW, 1);
+      g_param.fdc0_ch2 = fdc2214_read_ch(&hi2c1, FDC2214_ADDR_LOW, 2);
+
+      g_param.fdc1_ch0 = fdc2214_read_ch(&hi2c1, FDC2214_ADDR_HIGH, 0);
+      g_param.fdc1_ch1 = fdc2214_read_ch(&hi2c1, FDC2214_ADDR_HIGH, 1);
+      g_param.fdc1_ch2 = fdc2214_read_ch(&hi2c1, FDC2214_ADDR_HIGH, 2);
+
+      g_param.fdc2_ch0 = fdc2214_read_ch(&hi2c2, FDC2214_ADDR_LOW, 0);
+      g_param.fdc2_ch1 = fdc2214_read_ch(&hi2c2, FDC2214_ADDR_LOW, 1);
+      g_param.fdc2_ch2 = fdc2214_read_ch(&hi2c2, FDC2214_ADDR_LOW, 2);
+
+      g_param.fdc3_ch0 = fdc2214_read_ch(&hi2c2, FDC2214_ADDR_HIGH, 0);
+      g_param.fdc3_ch1 = fdc2214_read_ch(&hi2c2, FDC2214_ADDR_HIGH, 1);
+      g_param.fdc3_ch2 = fdc2214_read_ch(&hi2c2, FDC2214_ADDR_HIGH, 2);
 
 	  /* set step frequency with latest parameter value */
 	  ranger_set_step_frequency(g_param.step_freq);
 
-	  //ranger_app_set_led_pa1(g_param.led1);
 	  ranger_app_check_reset();
 	  ranger_app_check_step_enable();
+	  ranger_app_check_step_dir();
   }
 
 }
@@ -342,6 +381,26 @@ static void ranger_app_check_step_enable(void)
 	{
 		HAL_GPIO_WritePin(GPIOB, DRV_ENABLE, GPIO_PIN_SET);
 	}
+}
+
+
+static void ranger_app_check_step_dir(void)
+{
+	uint8_t dir_new = g_param.step_dir;
+
+	if(dir_new =! dir_old){
+		if(g_param.step_dir == 0)
+		{
+			HAL_GPIO_WritePin(GPIOB, DRV_DIR, GPIO_PIN_RESET);
+		}
+		if(g_param.step_dir == 1)
+		{
+			HAL_GPIO_WritePin(GPIOB, DRV_DIR, GPIO_PIN_SET);
+		}
+
+	}
+	dir_old = dir_new;
+
 }
 
 /**

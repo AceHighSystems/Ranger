@@ -28,7 +28,6 @@ extern SPI_HandleTypeDef hspi2;
  * DRV8462 register addresses
  * ============================================================
  */
-
 #define DRV8462_REG_CTRL1         0x04
 #define DRV8462_REG_CTRL2         0x05
 #define DRV8462_REG_CTRL3         0x06
@@ -227,7 +226,7 @@ void drv8462_init_fullstep_spi_mode(void)
 
     //ctrl2_value |= DRV8462_CTRL2_SPI_DIR;
     //ctrl2_value |= DRV8462_CTRL2_SPI_STEP;
-    ctrl2_value |= 0x08; // micro-step
+    ctrl2_value |= 0x0A; // micro-step 1/256
 
     drv8462_write_register(DRV8462_REG_CTRL2, ctrl2_value);
 

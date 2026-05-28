@@ -1,5 +1,7 @@
-../Core/Src/FDC2214.c:30:9:fdc2214_init	16	static
-../Core/Src/FDC2214.c:71:26:fdc2214_write_register	32	static
-../Core/Src/FDC2214.c:83:26:fdc2214_read_register	32	static
-../Core/Src/FDC2214.c:103:10:fdc2214_read_ch	32	static
-../Core/Src/FDC2214.c:123:6:fdc2214_read_device_id	16	static
+../Core/Src/FDC2214.c:32:9:fdc2214_0_init	16	static
+../Core/Src/FDC2214.c:72:9:fdc2214_1_init	16	static
+../Core/Src/FDC2214.c:113:9:fdc2214_2_init	16	static
+../Core/Src/FDC2214.c:153:9:fdc2214_3_init	16	static
+../Core/Src/FDC2214.c:194:26:fdc2214_write_register	40	static
+../Core/Src/FDC2214.c:206:26:fdc2214_read_register	40	static
+../Core/Src/FDC2214.c:226:10:fdc2214_read_ch	32	static

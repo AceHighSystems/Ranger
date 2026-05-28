@@ -60,30 +60,20 @@ PARAMETERS = {
     "temp":         RANGER.PARAM_TEMPERATURE,
     "test":         RANGER.PARAM_TEST,
     "error":        RANGER.PARAM_ERROR_FLAG,
-    "ch0":          RANGER.PARAM_FDC0_CH0,
-    "ch1":          RANGER.PARAM_FDC0_CH1,
-    "ch2":          RANGER.PARAM_FDC0_CH2
+    "ch0":          RANGER.PARAM_RAW_CH0,
+    "ch1":          RANGER.PARAM_RAW_CH1,
+    "ch2":          RANGER.PARAM_RAW_CH2,
+    "ch3":          RANGER.PARAM_RAW_CH3,
+    "ch4":          RANGER.PARAM_RAW_CH4,
+    "ch5":          RANGER.PARAM_RAW_CH5,
+    "ch6":          RANGER.PARAM_RAW_CH6,
+    "ch7":          RANGER.PARAM_RAW_CH7,
+    "ch8":          RANGER.PARAM_RAW_CH8,
+    "ch9":          RANGER.PARAM_RAW_CH9,
+    "ch10":         RANGER.PARAM_RAW_CH10,
+    "ch11":         RANGER.PARAM_RAW_CH11
 }
 
-
-# START SETUP Plotting  -----------------------------------------------------------------------------------------------------
-
-plt.style.use("dark_background")
-
-PLOT_LEN = 300
-UPDATE_HZ = 80
-UPDATE_DT = 1.0 / UPDATE_HZ
-
-channel_data = [
-    deque(maxlen=PLOT_LEN),
-    deque(maxlen=PLOT_LEN),
-    deque(maxlen=PLOT_LEN),
-]
-
-
-
-
-# END SETUP - Ploting -----------------------------------------------------------------------------------------------------
 
 rx_queue = queue.Queue()
 
@@ -291,15 +281,15 @@ def decode_response(msg: can.Message) -> None:
         temp = payload_to_i32(payload)/1000
         safe_print(f"Temperature = {temp:.3f} °C")   
 
-    if command_id == ACE_CMD_READ and status_code == ACE_STATUS_DATA_FOLLOWS and parameter_id == RANGER.PARAM_FDC0_CH0:
+    if command_id == ACE_CMD_READ and status_code == ACE_STATUS_DATA_FOLLOWS and parameter_id == RANGER.PARAM_RAW_CH0:
         value = (payload[0] | (payload[1] << 8) | (payload[2] << 16) | (payload[3] << 24))
         safe_print("Raw ch0: ", value)
 
-    if command_id == ACE_CMD_READ and status_code == ACE_STATUS_DATA_FOLLOWS and parameter_id == RANGER.PARAM_FDC0_CH1:
+    if command_id == ACE_CMD_READ and status_code == ACE_STATUS_DATA_FOLLOWS and parameter_id == RANGER.PARAM_RAW_CH1:
         value = (payload[0] | (payload[1] << 8) | (payload[2] << 16) | (payload[3] << 24))
         safe_print("Raw ch1: ", value) 
 
-    if command_id == ACE_CMD_READ and status_code == ACE_STATUS_DATA_FOLLOWS and parameter_id == RANGER.PARAM_FDC0_CH2:
+    if command_id == ACE_CMD_READ and status_code == ACE_STATUS_DATA_FOLLOWS and parameter_id == RANGER.PARAM_RAW_CH2:
         value = (payload[0] | (payload[1] << 8) | (payload[2] << 16) | (payload[3] << 24))
         safe_print("Raw ch2: ", value) 
 
@@ -532,11 +522,13 @@ def program_new_firmware(bus: can.Bus):
         # Application was marked as valid by the MCU
         safe_print("Transfer complete, jumping to application")
 
-
-
 # END Program new Firmware --------------------------------------------------------------------------------
-PLOT_LEN = 500
-UPDATE_MS = 20      # 50 Hz GUI refresh
+
+
+
+# START PLOTTING functions --------------------------------------------------------------------------------
+PLOT_LEN = 1000
+UPDATE_MS = 10      # 50 Hz GUI refresh
 CAN_POLL_MS = 1     # fast polling
 
 
@@ -551,12 +543,30 @@ def decode_u32_le(payload):
 
 def plot_channels_live_pyqtgraph(bus):
     channels = [
-        ("ch0", RANGER.PARAM_FDC0_CH0, 0),
-        ("ch1", RANGER.PARAM_FDC0_CH1, 1),
-        ("ch2", RANGER.PARAM_FDC0_CH2, 2),
+        ("ch0", RANGER.PARAM_RAW_CH0, 0),
+        ("ch1", RANGER.PARAM_RAW_CH1, 1),
+        ("ch2", RANGER.PARAM_RAW_CH2, 2),
+        ("ch3", RANGER.PARAM_RAW_CH3, 3),
+        ("ch4", RANGER.PARAM_RAW_CH4, 4),
+        ("ch5", RANGER.PARAM_RAW_CH5, 5),
+        ("ch6", RANGER.PARAM_RAW_CH6, 6),
+        ("ch7", RANGER.PARAM_RAW_CH7, 7),
+        ("ch8", RANGER.PARAM_RAW_CH8, 8),
+        ("ch9", RANGER.PARAM_RAW_CH9, 9),
+        ("ch10", RANGER.PARAM_RAW_CH10, 10),
+        ("ch11", RANGER.PARAM_RAW_CH11, 11),
     ]
 
     channel_data = [
+        deque(maxlen=PLOT_LEN),
+        deque(maxlen=PLOT_LEN),
+        deque(maxlen=PLOT_LEN),
+        deque(maxlen=PLOT_LEN),
+        deque(maxlen=PLOT_LEN),
+        deque(maxlen=PLOT_LEN),
+        deque(maxlen=PLOT_LEN),
+        deque(maxlen=PLOT_LEN),
+        deque(maxlen=PLOT_LEN),
         deque(maxlen=PLOT_LEN),
         deque(maxlen=PLOT_LEN),
         deque(maxlen=PLOT_LEN),
@@ -614,7 +624,7 @@ def plot_channels_live_pyqtgraph(bus):
                 channel_data[plot_index].append(value)
 
     def update_plot():
-        for i in range(3):
+        for i in range(12):
             data = list(channel_data[i])
 
             if not data:
@@ -640,9 +650,18 @@ def plot_channels_live_pyqtgraph(bus):
 
 def plot_channels_live(bus):
     channels = [
-        ("ch0", RANGER.PARAM_FDC0_CH0, 0),
-        ("ch1", RANGER.PARAM_FDC0_CH1, 1),
-        ("ch2", RANGER.PARAM_FDC0_CH2, 2),
+        ("ch0", RANGER.PARAM_RAW_CH0, 0),
+        ("ch1", RANGER.PARAM_RAW_CH1, 1),
+        ("ch2", RANGER.PARAM_RAW_CH2, 2),
+        ("ch3", RANGER.PARAM_RAW_CH3, 3),
+        ("ch4", RANGER.PARAM_RAW_CH4, 4),
+        ("ch5", RANGER.PARAM_RAW_CH5, 5),
+        ("ch6", RANGER.PARAM_RAW_CH6, 6),
+        ("ch7", RANGER.PARAM_RAW_CH7, 7),
+        ("ch8", RANGER.PARAM_RAW_CH8, 8),
+        ("ch9", RANGER.PARAM_RAW_CH9, 9),
+        ("ch10", RANGER.PARAM_RAW_CH10, 10),
+        ("ch11", RANGER.PARAM_RAW_CH11, 11),
     ]
 
     plt.ion()
@@ -690,7 +709,7 @@ def plot_channels_live(bus):
             if now - last_plot_update >= UPDATE_DT:
                 last_plot_update = now
 
-                for i in range(3):
+                for i in range(12):
                     data = list(channel_data[i])
 
                     if not data:
@@ -717,7 +736,55 @@ def plot_channels_live(bus):
         safe_print("Stopping live plot...")
         plt.ioff()
         plt.close()
-  
+
+# END PLOTTING functions --------------------------------------------------------------------------------
+
+def read_all_channels(bus):
+
+    channels = [
+        ("ch0",  RANGER.PARAM_RAW_CH0),
+        ("ch1",  RANGER.PARAM_RAW_CH1),
+        ("ch2",  RANGER.PARAM_RAW_CH2),
+        ("ch3",  RANGER.PARAM_RAW_CH3),
+        ("ch4",  RANGER.PARAM_RAW_CH4),
+        ("ch5",  RANGER.PARAM_RAW_CH5),
+        ("ch6",  RANGER.PARAM_RAW_CH6),
+        ("ch7",  RANGER.PARAM_RAW_CH7),
+        ("ch8",  RANGER.PARAM_RAW_CH8),
+        ("ch9",  RANGER.PARAM_RAW_CH9),
+        ("ch10", RANGER.PARAM_RAW_CH10),
+        ("ch11", RANGER.PARAM_RAW_CH11),
+    ]
+
+    values = [0] * 12
+
+    for i, (ch_name, expected_param) in enumerate(channels):
+
+        send_command(
+            bus,
+            build_read(ch_name),
+            f"READ {ch_name}"
+        )
+
+        msg = wait_for_response(timeout=0.2)
+
+        if msg is None:
+            continue
+
+        command_id   = msg.data[0]
+        parameter_id = msg.data[1]
+        status_code  = msg.data[2]
+        payload      = msg.data[3:8]
+
+        if (
+            command_id == ACE_CMD_READ and
+            status_code == ACE_STATUS_DATA_FOLLOWS and
+            parameter_id == expected_param
+        ):
+            values[i] = decode_u32_le(payload)
+
+    return values
+
 
 # Main loop definition STARTS here -------------------------------------------------------------------------------------
 
@@ -795,7 +862,13 @@ def main() -> None:
             # -------------------------
             elif tokens[0] == "plot":
                 plot_channels_live_pyqtgraph(bus)
-            
+
+            # -------------------------
+            # read all channels
+            # -------------------------
+            elif tokens[0] == "readall":
+                values = read_all_channels(bus)
+                safe_print(values)            
             # -------------------------
             # Exit python script
             # -------------------------

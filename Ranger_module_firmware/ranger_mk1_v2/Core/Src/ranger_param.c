@@ -32,9 +32,22 @@ static const ranger_param_entry_t param_table[] =
 	{ PARAM_RESET,		      &g_param.reset,         		PARAM_U8,  PARAM_RW },
 	{ PARAM_TEST,		      &g_param.test,         		PARAM_U32, PARAM_RW },
 	{ PARAM_ERROR_FLAG,		  &g_param.error_flag,         	PARAM_U32, PARAM_RO },
-    { PARAM_FDC0_CH0,		  &g_param.fdc0_ch0,            PARAM_U32, PARAM_RW },
-	{ PARAM_FDC0_CH1,		  &g_param.fdc0_ch1,            PARAM_U32, PARAM_RW },
-	{ PARAM_FDC0_CH2,		  &g_param.fdc0_ch2,            PARAM_U32, PARAM_RW }
+
+    { PARAM_RAW_CH0,		  &g_param.fdc0_ch0,            PARAM_U32, PARAM_RO },
+	{ PARAM_RAW_CH1,		  &g_param.fdc0_ch1,            PARAM_U32, PARAM_RO },
+	{ PARAM_RAW_CH2,		  &g_param.fdc0_ch2,            PARAM_U32, PARAM_RO },
+
+	{ PARAM_RAW_CH3,		  &g_param.fdc1_ch0,            PARAM_U32, PARAM_RO },
+    { PARAM_RAW_CH4,		  &g_param.fdc1_ch1,            PARAM_U32, PARAM_RO },
+    { PARAM_RAW_CH5,		  &g_param.fdc1_ch2,            PARAM_U32, PARAM_RO },
+
+    { PARAM_RAW_CH6,		  &g_param.fdc2_ch0,            PARAM_U32, PARAM_RO },
+    { PARAM_RAW_CH7,		  &g_param.fdc2_ch1,            PARAM_U32, PARAM_RO },
+    { PARAM_RAW_CH8,		  &g_param.fdc2_ch2,            PARAM_U32, PARAM_RO },
+
+    { PARAM_RAW_CH9,		  &g_param.fdc3_ch0,            PARAM_U32, PARAM_RO },
+    { PARAM_RAW_CH10,		  &g_param.fdc3_ch1,            PARAM_U32, PARAM_RO },
+    { PARAM_RAW_CH11,		  &g_param.fdc3_ch2,            PARAM_U32, PARAM_RO }
 };
 
 

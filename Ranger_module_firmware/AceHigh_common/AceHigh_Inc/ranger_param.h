@@ -47,9 +47,18 @@
 #define PARAM_TEST          		  0xC1U
 #define PARAM_ERROR_FLAG              0xC2U
 
-#define PARAM_FDC0_CH0        		  0xD0U
-#define PARAM_FDC0_CH1       		  0xD1U
-#define PARAM_FDC0_CH2       		  0xD2U
+#define PARAM_RAW_CH0       		  0xD0U
+#define PARAM_RAW_CH1      		      0xD1U
+#define PARAM_RAW_CH2      		      0xD2U
+#define PARAM_RAW_CH3      		      0xD3U
+#define PARAM_RAW_CH4      		      0xD4U
+#define PARAM_RAW_CH5      		      0xD5U
+#define PARAM_RAW_CH6      		      0xD6U
+#define PARAM_RAW_CH7      		      0xD7U
+#define PARAM_RAW_CH8      		      0xD8U
+#define PARAM_RAW_CH9      		      0xD9U
+#define PARAM_RAW_CH10      		  0xDAU
+#define PARAM_RAW_CH11     		      0xDBU
 
 
 
@@ -83,6 +92,18 @@ typedef struct
     uint32_t  fdc0_ch0;
     uint32_t  fdc0_ch1;
     uint32_t  fdc0_ch2;
+
+    uint32_t  fdc1_ch0;
+    uint32_t  fdc1_ch1;
+    uint32_t  fdc1_ch2;
+
+    uint32_t  fdc2_ch0;
+    uint32_t  fdc2_ch1;
+    uint32_t  fdc2_ch2;
+
+    uint32_t  fdc3_ch0;
+    uint32_t  fdc3_ch1;
+    uint32_t  fdc3_ch2;
 
 } ranger_param_t;
 

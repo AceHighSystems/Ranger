@@ -790,35 +790,70 @@ def read_all_channels(bus):
 def calibrate(bus):
     duration_s = 300
     start_time = time.monotonic()
-    
-    ch_max = [0] * 12
+
+    ch_max = [float("-inf")] * 12
     ch_min = [float("inf")] * 12
 
-    ch_offset = [0] * 12
-    ch_gain = [0] * 12
-
-    sample_count = 0
+    samples = []
 
     while (time.monotonic() - start_time) < duration_s:
-
-        values = read_all_channels(bus)  # should return list of 12 values
+        values = read_all_channels(bus)
 
         if values is None:
             continue
+
+        samples.append(values.copy())
 
         for i, value in enumerate(values):
             ch_max[i] = max(ch_max[i], value)
             ch_min[i] = min(ch_min[i], value)
 
+    max_sum = [0.0] * 12
+    min_sum = [0.0] * 12
+    max_count = [0] * 12
+    min_count = [0] * 12
+
+    extrema_window = 0.01
+
+    for values in samples:
+        for i, value in enumerate(values):
+            span = ch_max[i] - ch_min[i]
+
+            if span <= 0:
+                continue
+
+            max_threshold = ch_max[i] - extrema_window * span
+            min_threshold = ch_min[i] + extrema_window * span
+
+            if value >= max_threshold:
+                max_sum[i] += value
+                max_count[i] += 1
+
+            if value <= min_threshold:
+                min_sum[i] += value
+                min_count[i] += 1
+
+    avg_max = [0.0] * 12
+    avg_min = [0.0] * 12
+    ch_offset = [0.0] * 12
+    ch_gain = [0.0] * 12
+
     for i in range(12):
-        ch_offset[i] = (ch_max[i] + ch_min[i]) / 2.0
-        ch_gain[i]   = (ch_max[i] - ch_min[i]) / 2.0
+        avg_max[i] = max_sum[i] / max_count[i] if max_count[i] > 0 else ch_max[i]
+        avg_min[i] = min_sum[i] / min_count[i] if min_count[i] > 0 else ch_min[i]
+
+        ch_offset[i] = (avg_max[i] + avg_min[i]) / 2.0
+        ch_gain[i] = (avg_max[i] - avg_min[i]) / 2.0
 
     safe_print("Calibration complete")
-    print("ch_min    =", ch_min)
-    print("ch_max    =", ch_max)
-    print("ch_offset =", ch_offset)
-    print("ch_gain   =", ch_gain)
+    safe_print("ch_min    =", ch_min)
+    safe_print("ch_max    =", ch_max)
+    safe_print("avg_min   =", avg_min)
+    safe_print("avg_max   =", avg_max)
+    safe_print("min_count =", min_count)
+    safe_print("max_count =", max_count)
+    safe_print("ch_offset =", ch_offset)
+    safe_print("ch_gain   =", ch_gain)
 
     return ch_offset, ch_gain
 
@@ -899,7 +934,7 @@ def get_angle(bus, ch_offset, ch_gain):
         symbolSize=3
     )
 
-    history_len = 500
+    history_len = 1000
 
     sin_history = [0] * history_len
     cos_history = [0] * history_len
@@ -945,13 +980,13 @@ def get_angle(bus, ch_offset, ch_gain):
         #
         angle_rad = math.atan2(sin_diff, cos_diff)
 
-        angle_deg = math.degrees(angle_rad)
+        angle_deg = math.degrees(angle_rad) / 3
 
         #
-        # wrap to 0..360 deg
+        # wrap to 0..120 deg
         #
         if angle_deg < 0:
-            angle_deg += 360.0
+            angle_deg += 120.0
 
         #
         # update text

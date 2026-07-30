@@ -42,7 +42,7 @@ parameters:
     unit: milli volt (mV)
     reboot_required: false
     persistent: false
-    description: microstepping, 0 = full-step, 2 = half-step up to 256 stepping
+    description: microstepping, 1 = full-step, 2 = half-step up to 256 stepping
 
   step_dir:
     id: 0x42

@@ -24,9 +24,15 @@
    Motion (0x40–0x5F)
    ========================= */
 #define PARAM_STEP_ENABLE      	 	  0x40U
-#define PARAM_STEP_MICRO	  		  0x41U
-#define PARAM_STEP_DIR		   		  0x42U
-#define PARAM_STEP_FREQ		  		  0x43U
+#define PARAM_STEP_MOVE				  0x41U
+#define PARAM_TARGET_POSITION	 	  0x42U
+#define PARAM_POSITION	 	          0x43U
+#define PARAM_ANGLE	 	 			  0x44U
+
+#define PARAM_PROFILE_VELOCITY        0x45U
+#define PARAM_PROFILE_ACCELERATION    0x46U
+#define PARAM_PROFILE_DECELERATION    0x47U
+#define PARAM_MICROSTEP	  		      0x48U
 
 /* =========================
    Encoder (0x60–0x7F)
@@ -76,9 +82,15 @@ typedef struct
     int32_t   current;
     int32_t   temperature;
 
-    uint8_t   step_enable; // Is it better to map this to HW sleep?
-    uint8_t   step_microstep;
-    uint8_t	  step_dir;
+    uint8_t   step_enable;
+    int32_t   step_move;
+    int32_t	  target_position;
+    int32_t	  position;
+    int32_t   angle;
+	uint32_t  profile_velocity;
+	uint32_t  profile_acceleration;
+	uint32_t  profile_deceleration;
+    uint32_t  microstep;
 
 	uint32_t  step_freq;
 
@@ -92,18 +104,19 @@ typedef struct
     uint32_t  fdc0_ch0;
     uint32_t  fdc0_ch1;
     uint32_t  fdc0_ch2;
+    uint32_t  fdc0_ch3;
 
     uint32_t  fdc1_ch0;
     uint32_t  fdc1_ch1;
     uint32_t  fdc1_ch2;
+    uint32_t  fdc1_ch3;
 
     uint32_t  fdc2_ch0;
     uint32_t  fdc2_ch1;
     uint32_t  fdc2_ch2;
+    uint32_t  fdc2_ch3;
 
-    uint32_t  fdc3_ch0;
-    uint32_t  fdc3_ch1;
-    uint32_t  fdc3_ch2;
+
 
 } ranger_param_t;
 

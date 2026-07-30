@@ -18,7 +18,6 @@
 uint8_t fdc2214_0_init(void);
 uint8_t fdc2214_1_init(void);
 uint8_t fdc2214_2_init(void);
-uint8_t fdc2214_3_init(void);
 
 void fdc2214_read_device_id(uint16_t *value);
 

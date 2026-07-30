@@ -12,6 +12,13 @@ import pyqtgraph as pg
 import sys
 import ace_constants as ACE
 import ranger_mk1_param as RANGER
+
+# -----------------------------
+# Debugging
+# -----------------------------
+
+PRINT_CAN_RESPONSES = False
+
 # -----------------------------
 # Ace protocol / Ranger constants
 # -----------------------------
@@ -51,10 +58,11 @@ ACE_STATUS_UNKNOWN_PARAM    = 0x14
 
 PARAMETERS = {
     "reset":        RANGER.PARAM_RESET,
-    "step_dir":     RANGER.PARAM_STEP_DIR,
     "step_enable":  RANGER.PARAM_STEP_ENABLE,
+    "step_move":         RANGER.PARAM_STEP_MOVE,
+    "target":       RANGER.PARAM_TARGET_POSITION,
+    "velocity":     RANGER.PARAM_PROFILE_VELOCITY,
     "led":          RANGER.PARAM_LED_PA1,
-    "step_freq":    RANGER.PARAM_STEP_FREQ,
     "voltage":      RANGER.PARAM_VOLTAGE,
     "current":      RANGER.PARAM_CURRENT,
     "temp":         RANGER.PARAM_TEMPERATURE,
@@ -77,8 +85,8 @@ PARAMETERS = {
 
 rx_queue = queue.Queue()
 
-# Mac: use CHANNEL = "/dev/cu.usbmodem2080317458421"
-CHANNEL = "COM7"
+CHANNEL = "/dev/cu.usbmodem2080317458421"
+# Windows use CHANNEL = "COM7"
 BITRATE = 1000000
 
 print_lock = threading.Lock()
@@ -248,7 +256,7 @@ def decode_response(msg: can.Message) -> None:
     status_code  = msg.data[2]
     payload      = msg.data[3:8]
 
-    if (command_id != ACE_CMD_BOOT_DATA):
+    if (PRINT_CAN_RESPONSES and command_id != ACE_CMD_BOOT_DATA):
         print_message("Response", msg)
         safe_print(f"  command_id   = 0x{command_id:02X}")
         safe_print(f"  parameter_id = 0x{parameter_id:02X}")
@@ -281,18 +289,7 @@ def decode_response(msg: can.Message) -> None:
         temp = payload_to_i32(payload)/1000
         safe_print(f"Temperature = {temp:.3f} °C")   
 
-    if command_id == ACE_CMD_READ and status_code == ACE_STATUS_DATA_FOLLOWS and parameter_id == RANGER.PARAM_RAW_CH0:
-        value = (payload[0] | (payload[1] << 8) | (payload[2] << 16) | (payload[3] << 24))
-        safe_print("Raw ch0: ", value)
-
-    if command_id == ACE_CMD_READ and status_code == ACE_STATUS_DATA_FOLLOWS and parameter_id == RANGER.PARAM_RAW_CH1:
-        value = (payload[0] | (payload[1] << 8) | (payload[2] << 16) | (payload[3] << 24))
-        safe_print("Raw ch1: ", value) 
-
-    if command_id == ACE_CMD_READ and status_code == ACE_STATUS_DATA_FOLLOWS and parameter_id == RANGER.PARAM_RAW_CH2:
-        value = (payload[0] | (payload[1] << 8) | (payload[2] << 16) | (payload[3] << 24))
-        safe_print("Raw ch2: ", value) 
-
+ 
 def listener_thread(bus: can.Bus) -> None:
     global running
 
@@ -308,8 +305,8 @@ def listener_thread(bus: can.Bus) -> None:
             elif msg.arbitration_id == ACE_CAN_ID_RESPONSE:
                 decode_response(msg)
                 rx_queue.put(msg) # Only put ACE_CAN_ID_RESPONSE messages into the queue
-            else:
-                print_message("Other", msg)
+            #else:
+               # print_message("Other", msg)
             
         except Exception as exc:
             safe_print(f"Listener error: {exc}")
@@ -382,7 +379,7 @@ def program_new_firmware(bus: can.Bus):
 
     # Mac use: firmware_path = "/Users/tor/Documents/Ranger/Ranger_module_firmware/ranger_mk1_v2/Debug/ranger_mk1_v2.bin"
 
-    firmware_path = "C:/Users/torgj/Documents/Ranger/Ranger_module_firmware/ranger_mk1_v2/Debug/ranger_mk1_v2.bin"
+    firmware_path = "/Users/tor/Documents/Ranger/Ranger_module_firmware/ranger_mk1_v2/Debug/ranger_mk1_v2.bin"
     with open(firmware_path, "rb") as f:
         firmware = f.read()
 
@@ -788,7 +785,7 @@ def read_all_channels(bus):
 
 
 def calibrate(bus):
-    duration_s = 300
+    duration_s = 100
     start_time = time.monotonic()
 
     ch_max = [float("-inf")] * 12
@@ -963,11 +960,11 @@ def get_angle(bus, ch_offset, ch_gain):
         #
         # grouped channels
         #
-        sin_1 = (ch_norm[0] + ch_norm[4] + ch_norm[9]) / 3
-        sin_2 = (ch_norm[2] + ch_norm[7] + ch_norm[11]) / 3
+        sin_1 = (ch_norm[0] + ch_norm[4] + ch_norm[8]) / 3
+        sin_2 = (ch_norm[2] + ch_norm[6] + ch_norm[10]) / 3
 
-        cos_1 = (ch_norm[1] + ch_norm[5] + ch_norm[8]) / 3
-        cos_2 = (ch_norm[3] + ch_norm[6] + ch_norm[10]) / 3
+        cos_1 = (ch_norm[1] + ch_norm[5] + ch_norm[9]) / 3
+        cos_2 = (ch_norm[3] + ch_norm[7] + ch_norm[11]) / 3
 
         #
         # differential signals

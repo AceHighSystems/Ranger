@@ -98,8 +98,9 @@ static void ranger_app_handle_write(const ace_command_frame_t *frame);
  */
 static void ranger_app_check_reset(void);
 static void ranger_app_check_step_enable(void);
-void ranger_set_step_frequency(uint32_t freq_hz);
-static void ranger_app_check_step_dir(void);
+static void ranger_app_check_step_move(void);
+static void ranger_step_move(int32_t steps);
+
 
 
 /* =========================
@@ -149,9 +150,9 @@ void ranger_app_init(void)
   ina229_init();
   uint8_t check = fdc2214_0_init();
 
+  fdc2214_0_init();
   fdc2214_1_init();
   fdc2214_2_init();
-  fdc2214_3_init();
 
   if(check != 1){
 	  g_param.error_flag = check;
@@ -238,25 +239,24 @@ void ranger_app_tick(void)
       g_param.fdc0_ch0 = fdc2214_read_ch(&hi2c1, FDC2214_ADDR_LOW, 0);
       g_param.fdc0_ch1 = fdc2214_read_ch(&hi2c1, FDC2214_ADDR_LOW, 1);
       g_param.fdc0_ch2 = fdc2214_read_ch(&hi2c1, FDC2214_ADDR_LOW, 2);
+      g_param.fdc0_ch3 = fdc2214_read_ch(&hi2c1, FDC2214_ADDR_LOW, 3);
 
-      g_param.fdc1_ch0 = fdc2214_read_ch(&hi2c1, FDC2214_ADDR_HIGH, 0);
-      g_param.fdc1_ch1 = fdc2214_read_ch(&hi2c1, FDC2214_ADDR_HIGH, 1);
-      g_param.fdc1_ch2 = fdc2214_read_ch(&hi2c1, FDC2214_ADDR_HIGH, 2);
+      g_param.fdc1_ch0 = fdc2214_read_ch(&hi2c2, FDC2214_ADDR_HIGH, 0);
+      g_param.fdc1_ch1 = fdc2214_read_ch(&hi2c2, FDC2214_ADDR_HIGH, 1);
+      g_param.fdc1_ch2 = fdc2214_read_ch(&hi2c2, FDC2214_ADDR_HIGH, 2);
+      g_param.fdc1_ch3 = fdc2214_read_ch(&hi2c2, FDC2214_ADDR_HIGH, 3);
 
       g_param.fdc2_ch0 = fdc2214_read_ch(&hi2c2, FDC2214_ADDR_LOW, 0);
       g_param.fdc2_ch1 = fdc2214_read_ch(&hi2c2, FDC2214_ADDR_LOW, 1);
       g_param.fdc2_ch2 = fdc2214_read_ch(&hi2c2, FDC2214_ADDR_LOW, 2);
+      g_param.fdc2_ch3 = fdc2214_read_ch(&hi2c2, FDC2214_ADDR_LOW, 3);
 
-      g_param.fdc3_ch0 = fdc2214_read_ch(&hi2c2, FDC2214_ADDR_HIGH, 0);
-      g_param.fdc3_ch1 = fdc2214_read_ch(&hi2c2, FDC2214_ADDR_HIGH, 1);
-      g_param.fdc3_ch2 = fdc2214_read_ch(&hi2c2, FDC2214_ADDR_HIGH, 2);
 
 	  /* set step frequency with latest parameter value */
-	  ranger_set_step_frequency(g_param.step_freq);
 
+      ranger_app_check_step_move();
 	  ranger_app_check_reset();
 	  ranger_app_check_step_enable();
-	  ranger_app_check_step_dir();
   }
 
 }
@@ -383,17 +383,26 @@ static void ranger_app_check_step_enable(void)
 	}
 }
 
-
-static void ranger_app_check_step_dir(void)
+static void ranger_app_check_step_move(void)
 {
-	uint8_t dir_new = g_param.step_dir;
+	if(g_param.step_move != 0){
 
-	if(dir_new =! dir_old){
-		if(g_param.step_dir == 0)
+		// go to move step function and move the amount of steps
+		ranger_step_move(g_param.step_move);
+	}
+
+}
+
+static void ranger_set_step_dir(uint8_t dir)
+{
+	int32_t dir_new = dir;
+
+	if(dir_new != dir_old){
+		if(dir == 0)
 		{
 			HAL_GPIO_WritePin(GPIOB, DRV_DIR, GPIO_PIN_RESET);
 		}
-		if(g_param.step_dir == 1)
+		if(dir == 1)
 		{
 			HAL_GPIO_WritePin(GPIOB, DRV_DIR, GPIO_PIN_SET);
 		}
@@ -403,48 +412,72 @@ static void ranger_app_check_step_dir(void)
 
 }
 
-/**
- * @brief Change PWM frequency
- * NOTE:
- * The pre-scaler is set to 169+1 such that tick frequency is equal to 170/170 = 1MHz
- */
-void ranger_set_step_frequency(uint32_t freq_hz)
+static void ranger_step_move(int32_t steps)
 {
-    static uint32_t last_freq_hz = 0;
-    static uint8_t pwm_running = 0;
-
-    if (freq_hz == last_freq_hz)
+    /* Ignore zero-length moves */
+    if (steps == 0)
     {
         return;
     }
 
-    last_freq_hz = freq_hz;
+    uint32_t pulse_count;
 
-    if (freq_hz == 0)
+	/* Get and set the direction*/
+    if (steps > 0)
     {
-        if (pwm_running)
-        {
-            HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_2);
-            pwm_running = 0;
-        }
-        return;
+    	ranger_set_step_dir(1);
+    	pulse_count = (uint32_t)steps;
+    }
+    else if (steps < 0)
+    {
+    	ranger_set_step_dir(0);
+    	pulse_count = 0U - (uint32_t)steps;
     }
 
+    /* Store the number of STEP pulses to generate */
+    uint32_t step_pulses_remaining = (uint32_t)steps;
+
+    /* Ensure the PWM output is stopped before starting a new move */
+    HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_2);
+
+    uint32_t freq_hz = g_param.profile_velocity;
     uint32_t arr = (1000000UL / freq_hz) - 1UL;
 
-    if (arr < 4)
+     if (arr < 4)
+     {
+         arr = 4; // avoid invalid pulse width situation
+     }
+
+     __HAL_TIM_SET_AUTORELOAD(&htim2, arr);
+     __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 3);
+
+     /* Load new timer registers */
+     TIM2->EGR = TIM_EGR_UG;
+
+    /* Start from a clean timer state */
+    __HAL_TIM_CLEAR_FLAG(&htim2, TIM_FLAG_UPDATE);
+    __HAL_TIM_SET_COUNTER(&htim2, 0U);
+
+
+    /* Enable timer update interrupt for pulse counting */
+    __HAL_TIM_ENABLE_IT(&htim2, TIM_IT_UPDATE);
+
+    /* Start PWM generation on the STEP output */
+    if (HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2) != HAL_OK)
     {
-        arr = 4; // avoid invalid pulse width situation
+        /* Restore state if PWM failed to start */
+        __HAL_TIM_DISABLE_IT(&htim2, TIM_IT_UPDATE);
+        step_pulses_remaining = 0U;
     }
 
-    __HAL_TIM_SET_AUTORELOAD(&htim2, arr);
-    __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 3);
+    uint32_t move_time_ms =
+    		(uint32_t)(((uint64_t)pulse_count * 1000U + freq_hz - 1U) / freq_hz);
 
-    TIM2->EGR = TIM_EGR_UG;
+    HAL_Delay(move_time_ms);
+    HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_2);
 
-    if (!pwm_running)
-    {
-        HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
-        pwm_running = 1;
-    }
+    g_param.step_move = 0;
 }
+
+
+

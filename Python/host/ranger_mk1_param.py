@@ -15,10 +15,16 @@ PARAM_RESET			= 0x14
 # ===============================
 #  Motion parameters (0x40–0x5F)
 # ===============================
-PARAM_STEP_ENABLE       = 0x40
-PARAM_STEP_MICRO        = 0x41
-PARAM_STEP_DIR          = 0x42
-PARAM_STEP_FREQ         = 0x43
+PARAM_STEP_ENABLE            = 0x40
+PARAM_STEP_MOVE	             = 0x41
+PARAM_TARGET_POSITION        = 0x42
+PARAM_POSITION	             = 0x43
+PARAM_ANGLE                  = 0x44
+
+PARAM_PROFILE_VELOCITY       = 0x45
+PARAM_PROFILE_ACCELERATION   = 0x46
+ARAM_PROFILE_DECELERATION    = 0x47
+PARAM_MICROSTEP	  		     = 0x48
 
 # ===============================
 #  Encoder parameters (0x60–0x7F)
@@ -39,6 +45,7 @@ PARAM_TEMPERATURE       = 0x82
 PARAM_LED_PA1           = 0xC0
 PARAM_TEST              = 0xC1
 PARAM_ERROR_FLAG        = 0xC2
+PARAM_STEP_ERROR        = 0xC3
 
 PARAM_RAW_CH0       	= 0xD0
 PARAM_RAW_CH1      		= 0xD1

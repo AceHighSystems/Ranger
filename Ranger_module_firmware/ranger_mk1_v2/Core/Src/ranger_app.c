@@ -36,7 +36,17 @@
  *
  * Volatile is required because this variable is modified inside an ISR.
  */
+extern TIM_HandleTypeDef htim2;
+extern TIM_HandleTypeDef htim3;
+
 static volatile bool step_move_complete = false;
+static volatile bool step_move_active = false;
+static volatile uint32_t step_pulses_remaining = 0U;
+
+static uint32_t step_move_start_tick = 0U;
+static uint32_t step_move_timeout_ms = 0U;
+
+static uint8_t dir_old = 0U;
 
 /* Current state of LED on PA1 (exposed via parameter interface) */
 static uint8_t led_pa1_state = 0U;
@@ -69,7 +79,6 @@ static uint32_t last_ina_ms = 0;
 
 /* Global helper */
 
-uint8_t dir_old = 0;
 /* =========================
    Internal helpers
    ========================= */
@@ -108,6 +117,8 @@ static void ranger_app_check_reset(void);
 static void ranger_app_check_step_enable(void);
 static void ranger_app_check_step_move(void);
 static void ranger_step_move(int32_t steps);
+static void ranger_app_check_step_status(void);
+static void ranger_load_next_step_chunk(void);
 
 
 
@@ -262,9 +273,12 @@ void ranger_app_tick(void)
 
 	  /* set step frequency with latest parameter value */
 
-      ranger_app_check_step_move();
+
 	  ranger_app_check_reset();
 	  ranger_app_check_step_enable();
+
+	  ranger_app_check_step_status();
+	  ranger_app_check_step_move();
   }
 
 }
@@ -393,69 +407,151 @@ static void ranger_app_check_step_enable(void)
 
 static void ranger_app_check_step_move(void)
 {
-	if(g_param.step_move != 0){
+    int32_t requested_steps;
 
-		// go to move step function and move the amount of steps
-		ranger_step_move(g_param.step_move);
-	}
-
-}
-
-static void ranger_set_step_dir(uint8_t dir)
-{
-	int32_t dir_new = dir;
-
-	if(dir_new != dir_old){
-		if(dir == 0)
-		{
-			HAL_GPIO_WritePin(GPIOB, DRV_DIR, GPIO_PIN_RESET);
-		}
-		if(dir == 1)
-		{
-			HAL_GPIO_WritePin(GPIOB, DRV_DIR, GPIO_PIN_SET);
-		}
-
-	}
-	dir_old = dir_new;
-
-}
-
-
-/**
- * @brief Move the stepper by a specified number of STEP pulses.
- *
- * TIM2 generates the STEP PWM signal.
- * TIM3 counts TIM2 update events through the internal trigger connection.
- *
- * @param steps
- *        Positive value: move in the positive direction.
- *        Negative value: move in the negative direction.
- *        Zero: no movement.
- *
- * @note This is currently a blocking test function.
- * @note Maximum single move is 65,536 pulses because TIM3 is 16-bit.
- * @note Do not call this function from an interrupt handler.
- */
-static void ranger_step_move(int32_t steps)
-{
-    uint32_t pulse_count;
-    uint32_t freq_hz;
-    uint32_t tim2_arr;
-    uint32_t move_time_ms;
-    uint32_t timeout_ms;
-    uint32_t start_tick;
-
-    /* Ignore zero-length moves */
-    if (steps == 0)
+    /*
+     * g_param.step_move acts as a one-command mailbox.
+     */
+    if (g_param.step_move == 0)
     {
         return;
     }
 
     /*
-     * Determine movement direction and safely convert the signed
-     * step request into an unsigned pulse count.
+     * Leave the command in the mailbox while a move is active.
      *
-     * The subtraction method also safely handles INT32_MIN.
+     * This creates a one-command pending queue:
+     * the command will start after the current move completes.
+     *
+     * A later CAN write before completion will overwrite the pending
+     * command with the newest value.
+     */
+    if (step_move_active)
+    {
+        return;
+    }
+
+    /*
+     * Copy the command before clearing the mailbox.
+     */
+    requested_steps = g_param.step_move;
+    g_param.step_move = 0;
+
+    /*
+     * This function starts the move and returns immediately.
+     */
+    ranger_step_move(requested_steps);
+}
+
+
+static void ranger_app_check_step_status(void)
+{
+    if (!step_move_active)
+    {
+        return;
+    }
+
+    /*
+     * The TIM3 interrupt sets this flag after the final pulse chunk.
+     */
+    if (step_move_complete)
+    {
+        step_move_complete = false;
+        step_move_active = false;
+        step_pulses_remaining = 0U;
+
+        return;
+    }
+
+    /*
+     * Timeout protection. Unsigned subtraction remains valid across
+     * HAL_GetTick() rollover.
+     */
+    if ((HAL_GetTick() - step_move_start_tick) >= step_move_timeout_ms)
+    {
+        HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_2);
+        HAL_TIM_Base_Stop_IT(&htim3);
+
+        step_pulses_remaining = 0U;
+        step_move_complete = false;
+        step_move_active = false;
+
+        /*
+         * Optional:
+         * Set a dedicated motion timeout fault here.
+         *
+         * Example:
+         * g_param.error_flag |= RANGER_ERROR_STEP_TIMEOUT;
+         */
+    }
+}
+
+static void ranger_set_step_dir(uint8_t dir)
+{
+    /*
+     * Normalize any nonzero value to one.
+     */
+    dir = (dir != 0U) ? 1U : 0U;
+
+    if (dir == dir_old)
+    {
+        return;
+    }
+
+    if (dir == 0U)
+    {
+        HAL_GPIO_WritePin(GPIOB, DRV_DIR, GPIO_PIN_RESET);
+    }
+    else
+    {
+        HAL_GPIO_WritePin(GPIOB, DRV_DIR, GPIO_PIN_SET);
+    }
+
+    dir_old = dir;
+}
+
+
+/**
+ * @brief Start an asynchronous finite STEP move.
+ *
+ * TIM2 generates the STEP pulse train.
+ * TIM3 counts the generated pulses.
+ *
+ * Moves larger than 65,536 pulses are divided into multiple TIM3
+ * counting chunks. TIM2 is stopped briefly while each new chunk is
+ * loaded so that no uncounted STEP pulses occur between chunks.
+ *
+ * @param steps
+ *        Positive: positive direction.
+ *        Negative: negative direction.
+ *        Zero: no movement.
+ *
+ * @note This function is non-blocking.
+ * @note The main application loop continues servicing CAN and sensors.
+ * @note Do not call this function from an interrupt handler.
+ */
+static void ranger_step_move(int32_t steps)
+{
+    uint32_t pulse_count;
+    uint32_t pulse_frequency_hz;
+    uint32_t chunk_count;
+    uint64_t expected_move_ms;
+    uint64_t timeout_ms;
+
+    if (steps == 0)
+    {
+        return;
+    }
+
+    if (step_move_active)
+    {
+        return;
+    }
+
+    /*
+     * Convert the signed command into direction and unsigned magnitude.
+     *
+     * This conversion also safely handles INT32_MIN.
      */
     if (steps > 0)
     {
@@ -469,203 +565,237 @@ static void ranger_step_move(int32_t steps)
     }
 
     /*
-     * TIM3 is a 16-bit timer.
-     *
-     * ARR = 65535 corresponds to 65,536 incoming timer events because
-     * the counter counts from 0 through ARR inclusive.
+     * PROFILE_VELOCITY is assumed to contain STEP pulses per second.
      */
-    if (pulse_count > 65536U)
+    pulse_frequency_hz = g_param.profile_velocity;
+
+    if (pulse_frequency_hz == 0U)
     {
         /*
-         * Larger moves will need to be divided into multiple chunks.
-         * For now, reject the move rather than silently generating
-         * the wrong number of pulses.
+         * A zero pulse frequency cannot produce motion.
          */
-        g_param.step_move = 0;
-        return;
-    }
-
-    /* Get the requested STEP frequency */
-    freq_hz = g_param.profile_velocity;
-
-    /* Prevent division by zero */
-    if (freq_hz == 0U)
-    {
-        g_param.step_move = 0;
         return;
     }
 
     /*
-     * TIM2 currently has:
-     *
-     * Timer input clock = 80 MHz
-     * Prescaler         = 79
-     *
-     * Therefore:
-     *
-     * TIM2 counter frequency = 80 MHz / (79 + 1)
-     *                        = 1 MHz
+     * Calculate nominal move duration using 64-bit arithmetic.
+     * The division is rounded upward.
      */
-    tim2_arr = (1000000UL / freq_hz) - 1UL;
+    expected_move_ms =
+        (((uint64_t)pulse_count * 1000ULL) +
+         ((uint64_t)pulse_frequency_hz - 1ULL)) /
+        (uint64_t)pulse_frequency_hz;
 
     /*
-     * The STEP pulse compare value is 3 timer ticks.
-     *
-     * Ensure ARR remains larger than the compare value so the output
-     * has both a valid high time and low time.
+     * Determine the number of 16-bit TIM3 chunks.
      */
-    if (tim2_arr < 4U)
+    chunk_count =
+        (pulse_count + (65536U - 1U)) / 65536U;
+
+    /*
+     * Add:
+     * - 250 ms general margin
+     * - 2 ms margin for each timer chunk
+     *
+     * The chunk margin covers the brief stop/reload/restart operation.
+     */
+    timeout_ms =
+        expected_move_ms +
+        250ULL +
+        ((uint64_t)chunk_count * 2ULL);
+
+    /*
+     * Saturate to the 32-bit HAL tick range.
+     */
+    if (timeout_ms > UINT32_MAX)
     {
-        tim2_arr = 4U;
+        step_move_timeout_ms = UINT32_MAX;
+    }
+    else
+    {
+        step_move_timeout_ms = (uint32_t)timeout_ms;
     }
 
     /*
-     * Stop both timers before changing their configuration.
-     *
-     * TIM3 must also be stopped so that software-generated update
-     * events cannot accidentally be counted as STEP pulses.
+     * Put both timers into a known stopped state before configuring
+     * the first pulse-count chunk.
      */
     HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_2);
     HAL_TIM_Base_Stop_IT(&htim3);
 
-    /* Disable the TIM3 update interrupt while configuring the timer */
-    __HAL_TIM_DISABLE_IT(&htim3, TIM_IT_UPDATE);
-
-    /* Clear the previous completion state */
+    step_pulses_remaining = pulse_count;
     step_move_complete = false;
+    step_move_active = true;
+    step_move_start_tick = HAL_GetTick();
 
     /*
-     * Configure TIM2 STEP frequency and pulse width.
-     *
-     * PWM period:
-     *     (TIM2_ARR + 1) microseconds
-     *
-     * STEP-high time:
-     *     3 microseconds
+     * Configure and start TIM3 before starting TIM2. This ensures that
+     * the first generated STEP pulse is counted.
      */
-    __HAL_TIM_SET_AUTORELOAD(&htim2, tim2_arr);
-    __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 3U);
+    ranger_load_next_step_chunk();
 
     /*
-     * Transfer the new TIM2 ARR and CCR values into the active timer
-     * registers before TIM3 is started.
-     *
-     * This produces a software update event, but TIM3 is stopped at
-     * this point, so the event cannot be counted.
+     * ranger_load_next_step_chunk() clears step_move_active if TIM3
+     * could not be started.
      */
-    TIM2->EGR = TIM_EGR_UG;
-
-    /*
-     * Configure TIM3 to generate an update interrupt after exactly
-     * pulse_count incoming TIM2 update events.
-     *
-     * A timer counts from 0 through ARR inclusive, therefore:
-     *
-     *     number of events = ARR + 1
-     *
-     * and:
-     *
-     *     ARR = pulse_count - 1
-     */
-    __HAL_TIM_SET_AUTORELOAD(&htim3, pulse_count - 1U);
-    __HAL_TIM_SET_COUNTER(&htim3, 0U);
-
-    /*
-     * Transfer TIM3's new ARR value.
-     *
-     * TIM3 is still stopped, so this does not represent a counted
-     * TIM2 pulse.
-     */
-    TIM3->EGR = TIM_EGR_UG;
-
-    /* Clear update flags created during timer configuration */
-    __HAL_TIM_CLEAR_FLAG(&htim2, TIM_FLAG_UPDATE);
-    __HAL_TIM_CLEAR_FLAG(&htim3, TIM_FLAG_UPDATE);
-
-    /*
-     * Start TIM2 at ARR rather than zero.
-     *
-     * On the next TIM2 timer tick:
-     *
-     *     TIM2 rolls from ARR to 0
-     *     TIM2 generates an update event
-     *     STEP changes from low to high
-     *     TIM3 counts the event
-     *
-     * This aligns the first physical STEP rising edge with the first
-     * event counted by TIM3.
-     */
-    __HAL_TIM_SET_COUNTER(&htim2, tim2_arr);
-
-    /*
-     * Start TIM3 first so it is ready before the first TIM2 STEP
-     * pulse is generated.
-     */
-    if (HAL_TIM_Base_Start_IT(&htim3) != HAL_OK)
+    if (!step_move_active)
     {
-        g_param.step_move = 0;
         return;
     }
 
-    /* Start STEP PWM generation */
     if (HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2) != HAL_OK)
     {
         HAL_TIM_Base_Stop_IT(&htim3);
-        g_param.step_move = 0;
+
+        step_pulses_remaining = 0U;
+        step_move_complete = false;
+        step_move_active = false;
+
+        /*
+         * Optional:
+         * Set a timer start fault here.
+         */
+        return;
+    }
+}
+
+
+static void ranger_load_next_step_chunk(void)
+{
+    uint32_t chunk;
+
+    if (step_pulses_remaining == 0U)
+    {
+        /*
+         * There is no next chunk to load.
+         * Final completion is normally handled by the TIM3 callback.
+         */
+        step_move_complete = true;
         return;
     }
 
     /*
-     * Calculate the expected movement duration.
+     * TIM3 is a 16-bit timer and can count at most 65,536 events:
      *
-     * The rounding ensures partial milliseconds are rounded upward.
+     * counter values 0 through 65,535 inclusive.
      */
-    move_time_ms =
-        (uint32_t)(((uint64_t)pulse_count * 1000ULL +
-                    (uint64_t)freq_hz - 1ULL) /
-                   (uint64_t)freq_hz);
-
-    /*
-     * Add margin to detect a timer configuration or interrupt failure.
-     *
-     * The minimum margin avoids an unrealistically short timeout for
-     * short moves.
-     */
-    timeout_ms = move_time_ms + 100U;
-    start_tick = HAL_GetTick();
-
-    /*
-     * Wait until TIM3 reports that all pulses have been generated.
-     *
-     * HAL_Delay allows other interrupts, including CAN and TIM3, to run.
-     */
-    while (step_move_complete == false)
+    if (step_pulses_remaining > 65536U)
     {
-        if ((HAL_GetTick() - start_tick) >= timeout_ms)
-        {
-            /* Something failed: stop both timers */
-            HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_2);
-            HAL_TIM_Base_Stop_IT(&htim3);
-
-            break;
-        }
-
-        HAL_Delay(1U);
+        chunk = 65536U;
+    }
+    else
+    {
+        chunk = step_pulses_remaining;
     }
 
-    /* Clear the movement command */
-    g_param.step_move = 0;
+    /*
+     * Reserve this chunk before starting TIM3.
+     *
+     * step_pulses_remaining therefore represents pulses not yet assigned
+     * to the currently running TIM3 chunk.
+     */
+    step_pulses_remaining -= chunk;
+
+    /*
+     * TIM3 must already be stopped when this function is called.
+     */
+    __HAL_TIM_DISABLE(&htim3);
+    __HAL_TIM_DISABLE_IT(&htim3, TIM_IT_UPDATE);
+
+    __HAL_TIM_SET_COUNTER(&htim3, 0U);
+
+    /*
+     * TIM3 counts from zero through ARR inclusive.
+     *
+     * ARR = chunk - 1 produces exactly 'chunk' count events.
+     */
+    __HAL_TIM_SET_AUTORELOAD(&htim3, chunk - 1U);
+
+    /*
+     * Transfer the new ARR value into the active timer register.
+     *
+     * EGR.UG may set the update flag, so the flag must be cleared
+     * after generating the update event.
+     */
+    htim3.Instance->EGR = TIM_EGR_UG;
+
+    __HAL_TIM_SET_COUNTER(&htim3, 0U);
+    __HAL_TIM_CLEAR_FLAG(&htim3, TIM_FLAG_UPDATE);
+
+    if (HAL_TIM_Base_Start_IT(&htim3) != HAL_OK)
+    {
+        step_pulses_remaining = 0U;
+        step_move_complete = false;
+        step_move_active = false;
+
+        /*
+         * Optional:
+         * Set a TIM3 start fault here.
+         */
+    }
 }
-
-
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-    if (htim->Instance == TIM3)
+    if (htim == NULL)
     {
-        HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_2);
-        HAL_TIM_Base_Stop_IT(&htim3);
+        return;
+    }
 
+    if (htim->Instance != TIM3)
+    {
+        return;
+    }
+
+    /*
+     * Stop STEP generation immediately at the chunk boundary.
+     *
+     * This prevents TIM2 from generating pulses while TIM3 is being
+     * reconfigured. Without this stop, one or more pulses could occur
+     * without being counted at each 65,536-pulse boundary.
+     */
+    HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_2);
+    HAL_TIM_Base_Stop_IT(&htim3);
+
+    if (step_pulses_remaining > 0U)
+    {
+        /*
+         * Configure and start TIM3 for the next pulse chunk.
+         */
+        ranger_load_next_step_chunk();
+
+        if (!step_move_active)
+        {
+            /*
+             * TIM3 failed to start.
+             */
+            return;
+        }
+
+        /*
+         * Resume STEP generation only after TIM3 is ready.
+         */
+        if (HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2) != HAL_OK)
+        {
+            HAL_TIM_Base_Stop_IT(&htim3);
+
+            step_pulses_remaining = 0U;
+            step_move_complete = false;
+            step_move_active = false;
+
+            /*
+             * Optional:
+             * Set a TIM2 restart fault here.
+             */
+        }
+    }
+    else
+    {
+        /*
+         * The final TIM3 chunk has completed.
+         *
+         * The foreground application task clears step_move_active.
+         */
         step_move_complete = true;
     }
 }

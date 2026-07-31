@@ -17,7 +17,7 @@ import ranger_mk1_param as RANGER
 # Debugging
 # -----------------------------
 
-PRINT_CAN_RESPONSES = False
+PRINT_CAN_RESPONSES = True
 
 # -----------------------------
 # Ace protocol / Ranger constants
@@ -59,7 +59,7 @@ ACE_STATUS_UNKNOWN_PARAM    = 0x14
 PARAMETERS = {
     "reset":        RANGER.PARAM_RESET,
     "step_enable":  RANGER.PARAM_STEP_ENABLE,
-    "step_move":         RANGER.PARAM_STEP_MOVE,
+    "step_move":    RANGER.PARAM_STEP_MOVE,
     "target":       RANGER.PARAM_TARGET_POSITION,
     "velocity":     RANGER.PARAM_PROFILE_VELOCITY,
     "led":          RANGER.PARAM_LED_PA1,

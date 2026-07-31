@@ -30,6 +30,14 @@
    Application state
    ========================= */
 
+/*
+ * Set by the TIM3 interrupt when the requested number of STEP pulses
+ * has been generated.
+ *
+ * Volatile is required because this variable is modified inside an ISR.
+ */
+static volatile bool step_move_complete = false;
+
 /* Current state of LED on PA1 (exposed via parameter interface) */
 static uint8_t led_pa1_state = 0U;
 
@@ -412,72 +420,252 @@ static void ranger_set_step_dir(uint8_t dir)
 
 }
 
+
+/**
+ * @brief Move the stepper by a specified number of STEP pulses.
+ *
+ * TIM2 generates the STEP PWM signal.
+ * TIM3 counts TIM2 update events through the internal trigger connection.
+ *
+ * @param steps
+ *        Positive value: move in the positive direction.
+ *        Negative value: move in the negative direction.
+ *        Zero: no movement.
+ *
+ * @note This is currently a blocking test function.
+ * @note Maximum single move is 65,536 pulses because TIM3 is 16-bit.
+ * @note Do not call this function from an interrupt handler.
+ */
 static void ranger_step_move(int32_t steps)
 {
+    uint32_t pulse_count;
+    uint32_t freq_hz;
+    uint32_t tim2_arr;
+    uint32_t move_time_ms;
+    uint32_t timeout_ms;
+    uint32_t start_tick;
+
     /* Ignore zero-length moves */
     if (steps == 0)
     {
         return;
     }
 
-    uint32_t pulse_count;
-
-	/* Get and set the direction*/
+    /*
+     * Determine movement direction and safely convert the signed
+     * step request into an unsigned pulse count.
+     *
+     * The subtraction method also safely handles INT32_MIN.
+     */
     if (steps > 0)
     {
-    	ranger_set_step_dir(1);
-    	pulse_count = (uint32_t)steps;
+        ranger_set_step_dir(1U);
+        pulse_count = (uint32_t)steps;
     }
-    else if (steps < 0)
+    else
     {
-    	ranger_set_step_dir(0);
-    	pulse_count = 0U - (uint32_t)steps;
+        ranger_set_step_dir(0U);
+        pulse_count = 0U - (uint32_t)steps;
     }
 
-    /* Store the number of STEP pulses to generate */
-    uint32_t step_pulses_remaining = (uint32_t)steps;
+    /*
+     * TIM3 is a 16-bit timer.
+     *
+     * ARR = 65535 corresponds to 65,536 incoming timer events because
+     * the counter counts from 0 through ARR inclusive.
+     */
+    if (pulse_count > 65536U)
+    {
+        /*
+         * Larger moves will need to be divided into multiple chunks.
+         * For now, reject the move rather than silently generating
+         * the wrong number of pulses.
+         */
+        g_param.step_move = 0;
+        return;
+    }
 
-    /* Ensure the PWM output is stopped before starting a new move */
+    /* Get the requested STEP frequency */
+    freq_hz = g_param.profile_velocity;
+
+    /* Prevent division by zero */
+    if (freq_hz == 0U)
+    {
+        g_param.step_move = 0;
+        return;
+    }
+
+    /*
+     * TIM2 currently has:
+     *
+     * Timer input clock = 80 MHz
+     * Prescaler         = 79
+     *
+     * Therefore:
+     *
+     * TIM2 counter frequency = 80 MHz / (79 + 1)
+     *                        = 1 MHz
+     */
+    tim2_arr = (1000000UL / freq_hz) - 1UL;
+
+    /*
+     * The STEP pulse compare value is 3 timer ticks.
+     *
+     * Ensure ARR remains larger than the compare value so the output
+     * has both a valid high time and low time.
+     */
+    if (tim2_arr < 4U)
+    {
+        tim2_arr = 4U;
+    }
+
+    /*
+     * Stop both timers before changing their configuration.
+     *
+     * TIM3 must also be stopped so that software-generated update
+     * events cannot accidentally be counted as STEP pulses.
+     */
     HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_2);
+    HAL_TIM_Base_Stop_IT(&htim3);
 
-    uint32_t freq_hz = g_param.profile_velocity;
-    uint32_t arr = (1000000UL / freq_hz) - 1UL;
+    /* Disable the TIM3 update interrupt while configuring the timer */
+    __HAL_TIM_DISABLE_IT(&htim3, TIM_IT_UPDATE);
 
-     if (arr < 4)
-     {
-         arr = 4; // avoid invalid pulse width situation
-     }
+    /* Clear the previous completion state */
+    step_move_complete = false;
 
-     __HAL_TIM_SET_AUTORELOAD(&htim2, arr);
-     __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 3);
+    /*
+     * Configure TIM2 STEP frequency and pulse width.
+     *
+     * PWM period:
+     *     (TIM2_ARR + 1) microseconds
+     *
+     * STEP-high time:
+     *     3 microseconds
+     */
+    __HAL_TIM_SET_AUTORELOAD(&htim2, tim2_arr);
+    __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 3U);
 
-     /* Load new timer registers */
-     TIM2->EGR = TIM_EGR_UG;
+    /*
+     * Transfer the new TIM2 ARR and CCR values into the active timer
+     * registers before TIM3 is started.
+     *
+     * This produces a software update event, but TIM3 is stopped at
+     * this point, so the event cannot be counted.
+     */
+    TIM2->EGR = TIM_EGR_UG;
 
-    /* Start from a clean timer state */
+    /*
+     * Configure TIM3 to generate an update interrupt after exactly
+     * pulse_count incoming TIM2 update events.
+     *
+     * A timer counts from 0 through ARR inclusive, therefore:
+     *
+     *     number of events = ARR + 1
+     *
+     * and:
+     *
+     *     ARR = pulse_count - 1
+     */
+    __HAL_TIM_SET_AUTORELOAD(&htim3, pulse_count - 1U);
+    __HAL_TIM_SET_COUNTER(&htim3, 0U);
+
+    /*
+     * Transfer TIM3's new ARR value.
+     *
+     * TIM3 is still stopped, so this does not represent a counted
+     * TIM2 pulse.
+     */
+    TIM3->EGR = TIM_EGR_UG;
+
+    /* Clear update flags created during timer configuration */
     __HAL_TIM_CLEAR_FLAG(&htim2, TIM_FLAG_UPDATE);
-    __HAL_TIM_SET_COUNTER(&htim2, 0U);
+    __HAL_TIM_CLEAR_FLAG(&htim3, TIM_FLAG_UPDATE);
 
+    /*
+     * Start TIM2 at ARR rather than zero.
+     *
+     * On the next TIM2 timer tick:
+     *
+     *     TIM2 rolls from ARR to 0
+     *     TIM2 generates an update event
+     *     STEP changes from low to high
+     *     TIM3 counts the event
+     *
+     * This aligns the first physical STEP rising edge with the first
+     * event counted by TIM3.
+     */
+    __HAL_TIM_SET_COUNTER(&htim2, tim2_arr);
 
-    /* Enable timer update interrupt for pulse counting */
-    __HAL_TIM_ENABLE_IT(&htim2, TIM_IT_UPDATE);
+    /*
+     * Start TIM3 first so it is ready before the first TIM2 STEP
+     * pulse is generated.
+     */
+    if (HAL_TIM_Base_Start_IT(&htim3) != HAL_OK)
+    {
+        g_param.step_move = 0;
+        return;
+    }
 
-    /* Start PWM generation on the STEP output */
+    /* Start STEP PWM generation */
     if (HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2) != HAL_OK)
     {
-        /* Restore state if PWM failed to start */
-        __HAL_TIM_DISABLE_IT(&htim2, TIM_IT_UPDATE);
-        step_pulses_remaining = 0U;
+        HAL_TIM_Base_Stop_IT(&htim3);
+        g_param.step_move = 0;
+        return;
     }
 
-    uint32_t move_time_ms =
-    		(uint32_t)(((uint64_t)pulse_count * 1000U + freq_hz - 1U) / freq_hz);
+    /*
+     * Calculate the expected movement duration.
+     *
+     * The rounding ensures partial milliseconds are rounded upward.
+     */
+    move_time_ms =
+        (uint32_t)(((uint64_t)pulse_count * 1000ULL +
+                    (uint64_t)freq_hz - 1ULL) /
+                   (uint64_t)freq_hz);
 
-    HAL_Delay(move_time_ms);
-    HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_2);
+    /*
+     * Add margin to detect a timer configuration or interrupt failure.
+     *
+     * The minimum margin avoids an unrealistically short timeout for
+     * short moves.
+     */
+    timeout_ms = move_time_ms + 100U;
+    start_tick = HAL_GetTick();
 
+    /*
+     * Wait until TIM3 reports that all pulses have been generated.
+     *
+     * HAL_Delay allows other interrupts, including CAN and TIM3, to run.
+     */
+    while (step_move_complete == false)
+    {
+        if ((HAL_GetTick() - start_tick) >= timeout_ms)
+        {
+            /* Something failed: stop both timers */
+            HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_2);
+            HAL_TIM_Base_Stop_IT(&htim3);
+
+            break;
+        }
+
+        HAL_Delay(1U);
+    }
+
+    /* Clear the movement command */
     g_param.step_move = 0;
 }
 
 
 
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+    if (htim->Instance == TIM3)
+    {
+        HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_2);
+        HAL_TIM_Base_Stop_IT(&htim3);
+
+        step_move_complete = true;
+    }
+}

@@ -379,7 +379,7 @@ def program_new_firmware(bus: can.Bus):
 
     # Mac use: firmware_path = "/Users/tor/Documents/Ranger/Ranger_module_firmware/ranger_mk1_v2/Debug/ranger_mk1_v2.bin"
 
-    firmware_path = "/Users/tor/Documents/Ranger/Ranger_module_firmware/ranger_mk1_v2/Debug/ranger_mk1_v2.bin"
+    firmware_path = "/Users/tor/Documents/Ranger/Ranger_module_firmware/ranger_mk1_v3/Debug/ranger_mk1_v3.bin"
     with open(firmware_path, "rb") as f:
         firmware = f.read()
 

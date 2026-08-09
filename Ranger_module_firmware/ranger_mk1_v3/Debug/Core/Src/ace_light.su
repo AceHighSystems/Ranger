@@ -1,0 +1,12 @@
+../Core/Src/ace_light.c:169:6:ace_init	24	static
+../Core/Src/ace_light.c:209:6:ace_receive	40	static
+../Core/Src/ace_light.c:349:13:ace_decode_identifier	24	static
+../Core/Src/ace_light.c:417:17:ace_build_identifier	24	static
+../Core/Src/ace_light.c:463:31:ace_param_find	24	static
+../Core/Src/ace_light.c:496:16:ace_param_size	16	static
+../Core/Src/ace_light.c:524:21:ace_param_read	40	static
+../Core/Src/ace_light.c:643:21:ace_param_write	40	static
+../Core/Src/ace_light.c:749:13:ace_handle_read_request	40	static
+../Core/Src/ace_light.c:805:13:ace_handle_write_request	40	static
+../Core/Src/ace_light.c:851:13:ace_handle_broadcast	24	static
+../Core/Src/ace_light.c:897:13:ace_send_response	48	static

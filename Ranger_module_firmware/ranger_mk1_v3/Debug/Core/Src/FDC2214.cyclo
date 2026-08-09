@@ -1,0 +1,6 @@
+../Core/Src/FDC2214.c:30:9:fdc2214_0_init	22
+../Core/Src/FDC2214.c:76:9:fdc2214_1_init	22
+../Core/Src/FDC2214.c:123:9:fdc2214_2_init	22
+../Core/Src/FDC2214.c:171:26:fdc2214_write_register	1
+../Core/Src/FDC2214.c:183:26:fdc2214_read_register	3
+../Core/Src/FDC2214.c:203:10:fdc2214_read_ch	1

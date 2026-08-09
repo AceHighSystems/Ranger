@@ -1,5 +1,5 @@
 /*
- * ranger_params.h
+ * ranger_param.h
  *
  *  Created on: Apr 27, 2026
  *      Author: Tor Kaufmann Gjerde
@@ -8,17 +8,18 @@
 #ifndef INC_RANGER_PARAM_H_
 #define INC_RANGER_PARAM_H_
 
-#include <stdbool.h>
-#include <stddef.h>
-#include "ace_protocol.h"
+#include <stdint.h>
+#include "ace_light.h"
+
+/* ============================================================
+ * AceLight reserved parameter IDs 0x00 to 0x0F
+ * ============================================================ */
 
 /* =========================
    System (0x10–0x1F)
    ========================= */
-#define RANGER_PARAM_NODE_ID   		  0x10U
-#define PARAM_STATE            	      0x12U
-#define PARAM_UPTIME           	   	  0x13U
-#define PARAM_RESET			   		  0x14U
+#define PARAM_RESET     	 	      0x10U
+
 
 /* =========================
    Motion (0x40–0x5F)
@@ -37,7 +38,6 @@
 /* =========================
    Encoder (0x60–0x7F)
    ========================= */
-#define PARAM_ENCODER_POSITION 		  0x60U
 
 /* =========================
    Telemetry (0x80–0x9F)
@@ -67,40 +67,48 @@
 #define PARAM_RAW_CH11     		      0xDBU
 
 
-
-void ranger_param_init(void);
-void ranger_param_handle_command(const ace_command_frame_t *frame);
-
-bool ranger_param_write(uint8_t id, uint32_t value);
-bool ranger_param_read(uint8_t id, uint32_t *value);
-
+/*
+ * Ranger runtime parameter storage.
+ */
 typedef struct
 {
+	/* AceLight standard parameters */
+	uint8_t   sync;
+	uint8_t   node_id;
+	uint32_t  device_type;
+	uint32_t  serial_number;
+	uint32_t  firmware_version;
+	uint32_t  hardware_version;
+	uint32_t  protocol_version;
+
+	/* Ranger system parameters */
 	uint8_t   reset;
 
+	/* Telemetry */
     int32_t   voltage;
     int32_t   current;
     int32_t   temperature;
 
+    /* Motion */
     uint8_t   step_enable;
     int32_t   step_move;
     int32_t	  target_position;
     int32_t	  position;
     int32_t   angle;
+
 	uint32_t  profile_velocity;
 	uint32_t  profile_acceleration;
 	uint32_t  profile_deceleration;
     uint32_t  microstep;
 
-	uint32_t  step_freq;
-
+    /* Diagnostics */
 	uint8_t   led1;
-
     uint32_t  uptime_s;
     uint32_t  error_flag;
 
     uint32_t  test;
 
+    /* Encoder raw channels - prototyping */
     uint32_t  fdc0_ch0;
     uint32_t  fdc0_ch1;
     uint32_t  fdc0_ch2;
@@ -115,37 +123,19 @@ typedef struct
     uint32_t  fdc2_ch1;
     uint32_t  fdc2_ch2;
     uint32_t  fdc2_ch3;
-
-
-
 } ranger_param_t;
 
+
+
+/* Ranger runtime parameter instance. Defined in ranger_param.c. */
 extern ranger_param_t g_param;
 
+/* Complete Ranger AceLight parameter dictionary. Defined in ranger_param.c. */
+extern const ace_parameter_t ranger_param_table[];
 
-typedef enum
-{
-    PARAM_U8,
-    PARAM_U16,
-    PARAM_U32,
-    PARAM_I16,
-    PARAM_I32
-} ranger_param_type_t;
+/*  Number of entries in ranger_param_table[]. */
+extern const uint16_t ranger_param_count;
 
-
-typedef enum
-{
-    PARAM_RO,
-    PARAM_RW
-} ranger_param_access_t;
-
-typedef struct
-{
-    uint8_t id;
-    void *ptr;
-    ranger_param_type_t type;
-    ranger_param_access_t access;
-} ranger_param_entry_t;
 
 #endif /* INC_RANGER_PARAM_H_ */
 

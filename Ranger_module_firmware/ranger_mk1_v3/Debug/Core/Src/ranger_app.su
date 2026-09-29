@@ -1,0 +1,12 @@
+../Drivers/CMSIS/Include/core_cm4.h:1933:34:__NVIC_SystemReset	4	static,ignoring_inline_asm
+../Core/Src/ranger_app.c:108:13:ranger_app_set_led_pa1	16	static
+../Core/Src/ranger_app.c:132:6:ranger_app_init	16	static
+../Core/Src/ranger_app.c:180:6:ranger_app_tick	16	static
+../Core/Src/ranger_app.c:241:13:ranger_app_check_reset	8	static
+../Core/Src/ranger_app.c:250:13:ranger_app_check_step_enable	8	static
+../Core/Src/ranger_app.c:262:13:ranger_app_check_step_move	16	static
+../Core/Src/ranger_app.c:301:13:ranger_app_check_step_status	8	static
+../Core/Src/ranger_app.c:343:13:ranger_set_step_dir	16	static
+../Core/Src/ranger_app.c:388:13:ranger_step_move	152	static
+../Core/Src/ranger_app.c:686:13:ranger_load_next_step_chunk	16	static
+../Core/Src/ranger_app.c:761:6:HAL_TIM_PeriodElapsedCallback	16	static

@@ -1,0 +1,12 @@
+../Core/Src/ace_light.c:169:6:ace_init	2
+../Core/Src/ace_light.c:209:6:ace_receive	13
+../Core/Src/ace_light.c:349:13:ace_decode_identifier	6
+../Core/Src/ace_light.c:417:17:ace_build_identifier	1
+../Core/Src/ace_light.c:463:31:ace_param_find	5
+../Core/Src/ace_light.c:496:16:ace_param_size	4
+../Core/Src/ace_light.c:524:21:ace_param_read	12
+../Core/Src/ace_light.c:643:21:ace_param_write	12
+../Core/Src/ace_light.c:749:13:ace_handle_read_request	2
+../Core/Src/ace_light.c:805:13:ace_handle_write_request	1
+../Core/Src/ace_light.c:851:13:ace_handle_broadcast	1
+../Core/Src/ace_light.c:897:13:ace_send_response	10

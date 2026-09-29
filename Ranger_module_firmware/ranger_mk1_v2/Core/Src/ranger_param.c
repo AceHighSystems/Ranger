@@ -9,45 +9,54 @@
 ranger_param_t g_param =
 {
 	.reset = 0,
-	.step_enable = 0, 		// Is it better to map this to HW sleep?
-	.step_microstep = 1,
-	.step_dir = 0,
+	.step_enable = 0,
+	.step_move = 0,
+	.target_position = 0,
+	.microstep = 1,
 	.step_freq = 0,
 	.led1 = 1,
 	.test = 2,
 	.error_flag = 0
+
 };
 
 
 static const ranger_param_entry_t param_table[] =
 {
-    { PARAM_VOLTAGE,   		  &g_param.voltage,        		PARAM_I32, PARAM_RO },
-	{ PARAM_CURRENT,  		  &g_param.current,        		PARAM_I32, PARAM_RO },
-	{ PARAM_TEMPERATURE,  	  &g_param.temperature,        	PARAM_I32, PARAM_RO },
-    { PARAM_STEP_ENABLE,      &g_param.step_enable,         PARAM_U8,  PARAM_RW },
-    { PARAM_STEP_MICRO,       &g_param.step_microstep,      PARAM_U8,  PARAM_RW },
-    { PARAM_STEP_DIR,   	  &g_param.step_dir,         	PARAM_U8,  PARAM_RW },
-	{ PARAM_STEP_FREQ,		  &g_param.step_freq,         	PARAM_U32, PARAM_RW },
-    { PARAM_LED_PA1,		  &g_param.led1,         		PARAM_U8,  PARAM_RW },
-	{ PARAM_RESET,		      &g_param.reset,         		PARAM_U8,  PARAM_RW },
-	{ PARAM_TEST,		      &g_param.test,         		PARAM_U32, PARAM_RW },
-	{ PARAM_ERROR_FLAG,		  &g_param.error_flag,         	PARAM_U32, PARAM_RO },
+    { PARAM_VOLTAGE,   		 	   &g_param.voltage,        	   PARAM_I32, PARAM_RO },
+	{ PARAM_CURRENT,  		  	   &g_param.current,        	   PARAM_I32, PARAM_RO },
+	{ PARAM_TEMPERATURE,  	  	   &g_param.temperature,           PARAM_I32, PARAM_RO },
 
-    { PARAM_RAW_CH0,		  &g_param.fdc0_ch0,            PARAM_U32, PARAM_RO },
-	{ PARAM_RAW_CH1,		  &g_param.fdc0_ch1,            PARAM_U32, PARAM_RO },
-	{ PARAM_RAW_CH2,		  &g_param.fdc0_ch2,            PARAM_U32, PARAM_RO },
+    { PARAM_STEP_ENABLE,     	   &g_param.step_enable,           PARAM_U8,  PARAM_RW },
+	{ PARAM_STEP_MOVE,       	   &g_param.step_move,             PARAM_I32, PARAM_RW },
+	{ PARAM_TARGET_POSITION,  	   &g_param.target_position,       PARAM_I32, PARAM_RW },
+	{ PARAM_POSITION,         	   &g_param.position,              PARAM_I32, PARAM_RW },
+	{ PARAM_ANGLE,           	   &g_param.angle,                 PARAM_I32, PARAM_RW },
+	{ PARAM_PROFILE_VELOCITY, 	   &g_param.profile_velocity,      PARAM_U32, PARAM_RW },
+	{ PARAM_PROFILE_ACCELERATION,  &g_param.profile_acceleration,  PARAM_U32, PARAM_RW },
+	{ PARAM_PROFILE_DECELERATION,  &g_param.profile_deceleration,  PARAM_U32, PARAM_RW },
+    { PARAM_MICROSTEP,       	   &g_param.microstep,             PARAM_U32, PARAM_RW },
 
-	{ PARAM_RAW_CH3,		  &g_param.fdc1_ch0,            PARAM_U32, PARAM_RO },
-    { PARAM_RAW_CH4,		  &g_param.fdc1_ch1,            PARAM_U32, PARAM_RO },
-    { PARAM_RAW_CH5,		  &g_param.fdc1_ch2,            PARAM_U32, PARAM_RO },
+    { PARAM_LED_PA1,		 	   &g_param.led1,         		   PARAM_U8,  PARAM_RW },
+	{ PARAM_RESET,		     	   &g_param.reset,         		   PARAM_U8,  PARAM_RW },
+	{ PARAM_TEST,		     	   &g_param.test,         		   PARAM_U32, PARAM_RW },
+	{ PARAM_ERROR_FLAG,		  	   &g_param.error_flag,            PARAM_U32, PARAM_RO },
 
-    { PARAM_RAW_CH6,		  &g_param.fdc2_ch0,            PARAM_U32, PARAM_RO },
-    { PARAM_RAW_CH7,		  &g_param.fdc2_ch1,            PARAM_U32, PARAM_RO },
-    { PARAM_RAW_CH8,		  &g_param.fdc2_ch2,            PARAM_U32, PARAM_RO },
+    { PARAM_RAW_CH0,		 	   &g_param.fdc0_ch0,              PARAM_U32, PARAM_RO },
+	{ PARAM_RAW_CH1,		  	   &g_param.fdc0_ch1,              PARAM_U32, PARAM_RO },
+	{ PARAM_RAW_CH2,		 	   &g_param.fdc0_ch2,              PARAM_U32, PARAM_RO },
+	{ PARAM_RAW_CH3,		  	   &g_param.fdc0_ch3,              PARAM_U32, PARAM_RO },
 
-    { PARAM_RAW_CH9,		  &g_param.fdc3_ch0,            PARAM_U32, PARAM_RO },
-    { PARAM_RAW_CH10,		  &g_param.fdc3_ch1,            PARAM_U32, PARAM_RO },
-    { PARAM_RAW_CH11,		  &g_param.fdc3_ch2,            PARAM_U32, PARAM_RO }
+	{ PARAM_RAW_CH4,		 	   &g_param.fdc1_ch0,              PARAM_U32, PARAM_RO },
+    { PARAM_RAW_CH5,		  	   &g_param.fdc1_ch1,              PARAM_U32, PARAM_RO },
+    { PARAM_RAW_CH6,		  	   &g_param.fdc1_ch2,              PARAM_U32, PARAM_RO },
+	{ PARAM_RAW_CH7,		 	   &g_param.fdc1_ch3,              PARAM_U32, PARAM_RO },
+
+    { PARAM_RAW_CH8,		  	   &g_param.fdc2_ch0,              PARAM_U32, PARAM_RO },
+    { PARAM_RAW_CH9,		  	   &g_param.fdc2_ch1,              PARAM_U32, PARAM_RO },
+    { PARAM_RAW_CH10,		 	   &g_param.fdc2_ch2,              PARAM_U32, PARAM_RO },
+    { PARAM_RAW_CH11,		  	   &g_param.fdc2_ch3,              PARAM_U32, PARAM_RO }
+
 };
 
 

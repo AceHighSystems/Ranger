@@ -1,0 +1,3 @@
+../Core/Src/ranger_can.c:39:6:ranger_can_init	40	static
+../Core/Src/ranger_can.c:129:6:ranger_can_transmit	64	static
+../Core/Src/ranger_can.c:215:6:HAL_FDCAN_RxFifo0Callback	72	static

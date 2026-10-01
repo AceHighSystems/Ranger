@@ -24,7 +24,7 @@
 /* =========================
    Motion (0x40–0x5F)
    ========================= */
-#define PARAM_STEP_ENABLE      	 	  0x40U
+#define PARAM_MODE      	 	      0x40U
 #define PARAM_STEP_MOVE				  0x41U
 #define PARAM_TARGET_POSITION	 	  0x42U
 #define PARAM_POSITION	 	          0x43U
@@ -90,7 +90,7 @@ typedef struct
     int32_t   temperature;
 
     /* Motion */
-    uint8_t   step_enable;
+    uint8_t   mode;
     int32_t   step_move;
     int32_t	  target_position;
     int32_t	  position;

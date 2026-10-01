@@ -16,15 +16,15 @@ ranger_param_t g_param =
     /* AceLight standard parameters */
     .sync             = 0U,
     .node_id          = 2U,
-    .device_type      = 0U,
-    .serial_number    = 0U,
-    .firmware_version = 0U,
-    .hardware_version = 0U,
-    .protocol_version = 0U,
+    .device_type      = 1U,
+    .serial_number    = 1U,
+    .firmware_version = 1U,
+    .hardware_version = 2U,
+    .protocol_version = 1U,
 
     /* Ranger parameters */
     .reset           = 0U,
-    .step_enable     = 0U,
+    .mode            = 0U,
     .step_move       = 0,
     .target_position = 0,
     .microstep       = 1U,
@@ -65,7 +65,7 @@ const ace_parameter_t ranger_param_table[] =
 	{ PARAM_CURRENT,  		  	   &g_param.current,        	   ACE_PARAM_I32, ACE_PARAM_RO },
 	{ PARAM_TEMPERATURE,  	  	   &g_param.temperature,           ACE_PARAM_I32, ACE_PARAM_RO },
 
-    { PARAM_STEP_ENABLE,     	   &g_param.step_enable,           ACE_PARAM_U8,  ACE_PARAM_RW },
+    { PARAM_MODE,     	           &g_param.mode,                  ACE_PARAM_U8,  ACE_PARAM_RW },
 	{ PARAM_STEP_MOVE,       	   &g_param.step_move,             ACE_PARAM_I32, ACE_PARAM_RW },
 	{ PARAM_TARGET_POSITION,  	   &g_param.target_position,       ACE_PARAM_I32, ACE_PARAM_RW },
 	{ PARAM_POSITION,         	   &g_param.position,              ACE_PARAM_I32, ACE_PARAM_RO },

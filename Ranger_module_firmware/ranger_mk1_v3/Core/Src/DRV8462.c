@@ -21,7 +21,7 @@ extern SPI_HandleTypeDef hspi2;
  * Change these to match your schematic / CubeMX setup.
  */
 #define DRV8462_CS_GPIO_PORT      GPIOB
-#define DRV8462_CS_PIN            GPIO_PIN_12
+#define DRV8462_CS_PIN            GPIO_PIN_9
 
 
 /* ============================================================
@@ -188,7 +188,7 @@ static uint8_t drv8462_read_register(uint8_t reg)
  * ============================================================
  */
 
-void drv8462_init_fullstep_spi_mode(void)
+void drv8462_init_spi_mode(void)
 {
     /*
      * Wait after waking the device.
@@ -236,7 +236,7 @@ void drv8462_init_fullstep_spi_mode(void)
      * 0x0F is close to the default value.
      * Adding EN_OUT enables the motor outputs.
      */
-    uint8_t ctrl1_value = 0x0F;
+    uint8_t ctrl1_value = 0x06;
 
     ctrl1_value |= DRV8462_CTRL1_EN_OUT;
 

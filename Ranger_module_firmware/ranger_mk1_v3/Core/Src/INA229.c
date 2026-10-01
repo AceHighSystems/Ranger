@@ -22,8 +22,8 @@ extern SPI_HandleTypeDef hspi2;
  * ============================================================
  */
 
-#define INA229_CS_GPIO_PORT       GPIOB
-#define INA229_CS_PIN             GPIO_PIN_9
+#define INA229_CS_GPIO_PORT       GPIOA
+#define INA229_CS_PIN             GPIO_PIN_2
 
 /*
  * Change these to match your hardware.

@@ -37,7 +37,7 @@ PARAM = {
     "hardware_version":     (0x06, "U32"),
     "protocol_version":     (0x07, "U32"),
 
-    "step_enable":          (0x40, "U8"),
+    "mode":                 (0x40, "U8"),
     "step_move":            (0x41, "I32"),
     "target_position":      (0x42, "I32"),
     "position":             (0x43, "I32"),
